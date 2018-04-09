@@ -6,12 +6,12 @@ import (
 	"time"
 )
 
-type NodeConnection struct {
+type ClientConnection struct {
 	keepConnectionAliveTicker *time.Ticker
 	connection *xmpp.Conn
 }
 
-func (n *NodeConnection) Connect(address string, username string, password string, domain string, duration time.Duration) (err error) {
+func (n *ClientConnection) Connect(address string, username string, password string, domain string, duration time.Duration) (err error) {
 	n.connection, err = xmpp.Dial(address, username, domain, "announcer", password, &xmpp.Config{
 		SkipTLS: true,
 		TLSConfig: &tls.Config{},
@@ -25,7 +25,7 @@ func (n *NodeConnection) Connect(address string, username string, password strin
 	return
 }
 
-func (n *NodeConnection) keepConnectionAlive(duration time.Duration) {
+func (n *ClientConnection) keepConnectionAlive(duration time.Duration) {
 	n.keepConnectionAliveTicker = time.NewTicker(duration)
 	go func() {
 		for t := range n.keepConnectionAliveTicker.C {
@@ -35,10 +35,10 @@ func (n *NodeConnection) keepConnectionAlive(duration time.Duration) {
 	}()
 }
 
-func (n *NodeConnection) Send(msg string) error {
+func (n *ClientConnection) Send(msg string) error {
 	return n.connection.SendCustomMsg(msg)
 }
 
-func (n *NodeConnection) Close() {
+func (n *ClientConnection) Close() {
 	n.keepConnectionAliveTicker.Stop()
 }

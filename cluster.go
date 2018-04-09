@@ -8,33 +8,68 @@ import (
 )
 
 type Cluster struct {
-	username string
-	password string
-	domain string
-	duration int
-	Connections []*NodeConnection
+	client *client
+	component *component
+	Connections []Connection
 
 	sender string
 }
 
-func ClusterFactory(username string, password string, domain string, connectionAlivePingDuration int, nodeAddresses string) (*Cluster, error) {
+type client struct {
+	username string
+	password string
+	domain string
+	duration int
+}
+
+type component struct {
+	name string
+	secret string
+}
+
+func ClusterClientFactory(username string, password string, domain string, connectionAlivePingDuration int, nodeAddresses string) (*Cluster, error) {
 	cluster := &Cluster{
-		username: username,
-		password: password,
-		domain: domain,
-		duration: connectionAlivePingDuration,
+		client: &client{
+			username: username,
+			password: password,
+			domain: domain,
+			duration: connectionAlivePingDuration,
+		},
 	}
 
 	nodesAddressArray := strings.Split(nodeAddresses, ",")
 
 	for _,nodeAdd := range nodesAddressArray {
-		conn := &NodeConnection{}
-		if err := conn.Connect(nodeAdd, username, password, domain, time.Duration(cluster.duration)); err != nil {
+		conn := &ClientConnection{}
+		if err := conn.Connect(nodeAdd, username, password, domain, time.Duration(cluster.client.duration)); err != nil {
 			return nil, err
 		}
 
 		cluster.Connections = append(cluster.Connections, conn)
 		cluster.sender = fmt.Sprintf("%s@%s/%s", username, domain, "announcer")
+	}
+
+	return cluster, nil
+}
+
+func ClusterComponentFactory(name string, secret string, nodeAddresses string, from string) (*Cluster, error) {
+	cluster := &Cluster{
+		component: &component{
+			name: name,
+			secret: secret,
+		},
+	}
+
+	nodesAddressArray := strings.Split(nodeAddresses, ",")
+
+	for _,nodeAdd := range nodesAddressArray {
+		conn := &ComponentConnection{}
+		if err := conn.Connect(nodeAdd, name, secret); err != nil {
+			return nil, err
+		}
+
+		cluster.Connections = append(cluster.Connections, conn)
+		cluster.sender = from
 	}
 
 	return cluster, nil
