@@ -2,3 +2,5 @@ username="4"
 password="4"
 domain="soroush.ir"
 cluster_nodes="192.168.95.180:5222"
+rest_api_port=":8080"
+client_ping_interval=2
