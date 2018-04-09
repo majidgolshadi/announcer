@@ -3,7 +3,6 @@ package main
 import (
 	"github.com/BurntSushi/toml"
 	"github.com/majidgolshadi/client-announcer"
-	"log"
 )
 
 type config struct {
@@ -23,14 +22,4 @@ func main() {
 	}
 
 	client_announcer.RunHttpServer(cnf.HttpPort)
-
-	cluster, err := client_announcer.ClusterFactory(
-		cnf.Username, cnf.Password, cnf.Domain,
-		cnf.ClientPingInterval, cnf.ClusterNodes)
-
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-
-	cluster.Send("%smsg", "majid")
 }

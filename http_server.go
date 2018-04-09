@@ -10,8 +10,7 @@ func RunHttpServer(port string) error {
 		v1.POST("/register/announcer/", RegisterAnnouncerHandler)
 		v1.DELETE("/register/announcer/", DeregisterAnnouncerHandler)
 
-		// These two URI must be something like /announcer/:announcer_name/send/group but
-		// based on https://github.com/gin-gonic/gin/issues/205 issue we can't have it
+		// based on https://github.com/gin-gonic/gin/issues/205 issue we can't have something like /announcer/:announcer_name/send/
 		v1.POST("/announce", AnnounceHandler)
 	}
 

@@ -4,7 +4,6 @@ import (
 	"strings"
 	"errors"
 	"time"
-	"fmt"
 )
 
 type Cluster struct {
@@ -46,13 +45,12 @@ func ClusterClientFactory(username string, password string, domain string, conne
 		}
 
 		cluster.Connections = append(cluster.Connections, conn)
-		cluster.sender = fmt.Sprintf("%s@%s/%s", username, domain, "announcer")
 	}
 
 	return cluster, nil
 }
 
-func ClusterComponentFactory(name string, secret string, nodeAddresses string, from string) (*Cluster, error) {
+func ClusterComponentFactory(name string, secret string, nodeAddresses string) (*Cluster, error) {
 	cluster := &Cluster{
 		component: &component{
 			name: name,
@@ -69,15 +67,15 @@ func ClusterComponentFactory(name string, secret string, nodeAddresses string, f
 		}
 
 		cluster.Connections = append(cluster.Connections, conn)
-		cluster.sender = from
 	}
 
 	return cluster, nil
 }
 
-func (cluster *Cluster)Send(msgTemplate string, to string) error {
+// TODO: Add sending rate
+func (cluster *Cluster)Send(msg string) error {
 	for _, conn := range cluster.Connections {
-		if err := conn.Send(fmt.Sprintf(msgTemplate, to, cluster.sender)); err == nil {
+		if err := conn.Send(msg); err == nil {
 			return nil
 		}
 	}
