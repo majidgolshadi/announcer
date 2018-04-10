@@ -10,7 +10,7 @@ type Cluster struct {
 	Client      *Client
 	Component   *Component
 	connections []Connection
-	Addresses string
+	Addresses   string
 }
 
 type Client struct {

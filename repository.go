@@ -1,12 +1,12 @@
 package client_announcer
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/samuel/go-zookeeper/zk"
 	"strings"
 	"time"
-	"encoding/json"
 )
 
 type repository struct {
@@ -21,7 +21,7 @@ func RepositoryFactory(zookeeperAddress string, namespace string) (repo *reposit
 		zkNamespace: namespace,
 	}
 
-	zkServers :=  strings.Split(zookeeperAddress, ",")
+	zkServers := strings.Split(zookeeperAddress, ",")
 	if repo.zkConn, _, err = zk.Connect(zkServers, time.Minute); err != nil {
 		return nil, err
 	}
@@ -116,7 +116,7 @@ func (r *repository) restoreCluster(clusterData []byte) (*Cluster, error) {
 }
 
 func (r *repository) storeCluster(name string, cluster *Cluster) error {
-	json, err :=  json.Marshal(cluster)
+	json, err := json.Marshal(cluster)
 
 	if err != nil {
 		return err
@@ -133,7 +133,7 @@ func (r *repository) storeCluster(name string, cluster *Cluster) error {
 func (r *repository) Close() {
 	r.zkConn.Close()
 
-	for _,cluster := range r.clusters {
+	for _, cluster := range r.clusters {
 		cluster.Close()
 	}
 }
