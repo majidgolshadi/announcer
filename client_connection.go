@@ -1,19 +1,19 @@
 package client_announcer
 
 import (
-	"github.com/soroush-app/xmpp-client/xmpp"
 	"crypto/tls"
+	"github.com/soroush-app/xmpp-client/xmpp"
 	"time"
 )
 
 type ClientConnection struct {
 	keepConnectionAliveTicker *time.Ticker
-	connection *xmpp.Conn
+	connection                *xmpp.Conn
 }
 
 func (n *ClientConnection) Connect(address string, username string, password string, domain string, duration time.Duration) (err error) {
 	n.connection, err = xmpp.Dial(address, username, domain, "announcer", password, &xmpp.Config{
-		SkipTLS: true,
+		SkipTLS:   true,
 		TLSConfig: &tls.Config{},
 	})
 
