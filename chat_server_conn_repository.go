@@ -10,9 +10,9 @@ import (
 )
 
 type chatServerConnRepository struct {
-	clusters    map[string]*Cluster
-	zkConn      *zk.Conn
-	zkNamespace string
+	clusters       map[string]*Cluster
+	zkConn         *zk.Conn
+	zkNamespace    string
 	defaultCluster string
 }
 

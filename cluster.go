@@ -41,7 +41,7 @@ func ClusterClientFactory(username string, password string, domain string, conne
 
 	for _, nodeAdd := range nodesAddressArray {
 		conn := &ClientConnection{}
-		if err := conn.Connect(nodeAdd, username, password, domain, time.Duration(cluster.Client.Duration) * time.Second); err != nil {
+		if err := conn.Connect(nodeAdd, username, password, domain, time.Duration(cluster.Client.Duration)*time.Second); err != nil {
 			return nil, err
 		}
 
@@ -76,7 +76,7 @@ func ClusterComponentFactory(name string, secret string, nodeAddresses string) (
 
 // TODO: Add sending rate
 func (cluster *Cluster) SendToUsers(msgTemplate string, users []string) {
-	for _,user := range users {
+	for _, user := range users {
 		msg := fmt.Sprintf(msgTemplate, user)
 		if err := cluster.send(msg); err != nil {
 			fmt.Sprintf("error: %s \n\ruser: %s \n\rmessage: %s", err.Error(), user, msg)

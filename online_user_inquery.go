@@ -1,36 +1,27 @@
 package client_announcer
 
-import "github.com/go-redis/redis"
-
 type onlineUserInquiry struct {
-	MysqlInquiry *MysqlInquiry
-	redisConn    *redis.Client
+	MysqlConn *Mysql
+	redisConn *Redis
 }
 
-func OnlineUserInquiryFactory(mysqlInquiry *MysqlInquiry, redisStr *Redis) (ouq *onlineUserInquiry, err error) {
+func OnlineUserInquiryFactory(mysqlAddress string, mysqlUsername string, mysqlPassword string, mysqlDatabase string,
+	redisAddr string, redisPassword string, redisDb int, redisPingInterval int) (ouq *onlineUserInquiry, err error) {
+
 	ouq = &onlineUserInquiry{}
-	ouq.MysqlInquiry = mysqlInquiry
-	ouq.MysqlInquiry.Connect()
+	ouq.MysqlConn, err = MysqlClientFactory(mysqlAddress, mysqlUsername, mysqlPassword, mysqlDatabase)
 
 	if err != nil {
 		return nil, err
 	}
 
-	ouq.redisConn = redis.NewClient(&redis.Options{
-		Addr:     redisStr.Address,
-		Password: redisStr.Password,
-		DB:       redisStr.Database,
-	})
-
-	if statusCmd := ouq.redisConn.Ping(); statusCmd.Err() != nil {
-		return nil, statusCmd.Err()
-	}
+	ouq.redisConn = RedisClientFactory(redisAddr, redisPassword, redisDb, redisPingInterval)
 
 	return ouq, nil
 }
 
 func (ouq *onlineUserInquiry) GetOnlineUsers(channel int) ([]string, error) {
-	users, err := ouq.MysqlInquiry.getChannelUsers(channel)
+	users, err := ouq.MysqlConn.GetChannelUsers(channel)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +33,7 @@ func (ouq *onlineUserInquiry) GetOnlineUsers(channel int) ([]string, error) {
 			return nil, err
 		}
 
-		if value, _ := ouq.redisConn.Keys(username+"/*").Result(); len(value) != 0 {
+		if ouq.redisConn.UsernameExists(username) {
 			onlineUsers = append(onlineUsers, username)
 		}
 	}
@@ -51,6 +42,6 @@ func (ouq *onlineUserInquiry) GetOnlineUsers(channel int) ([]string, error) {
 }
 
 func (ouq *onlineUserInquiry) Close() {
-	ouq.MysqlInquiry.Close()
+	ouq.MysqlConn.Close()
 	ouq.redisConn.Close()
 }

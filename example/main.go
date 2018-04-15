@@ -17,7 +17,7 @@ type config struct {
 }
 
 type Ejabberd struct {
-	ClusterNodes string `toml:"cluster_nodes"`
+	ClusterNodes   string `toml:"cluster_nodes"`
 	DefaultCluster string `toml:"default_cluster"`
 }
 
@@ -43,6 +43,7 @@ type Redis struct {
 	ClusterNodes string `toml:"cluster_nodes"`
 	Password     string `toml:"password"`
 	DB           int    `toml:"db"`
+	PingInterval int    `toml:"ping_interval"`
 }
 
 type Mysql struct {
@@ -54,7 +55,7 @@ type Mysql struct {
 
 func main() {
 	var (
-		cnf config
+		cnf     config
 		cluster *client_announcer.Cluster
 	)
 
@@ -89,16 +90,9 @@ func main() {
 	chatConnRepo.SetCluster(cnf.Ejabberd.DefaultCluster, cluster)
 	chatConnRepo.SetDefaultCluster(cnf.Ejabberd.DefaultCluster)
 
-	onlineUserInquiry, _ := client_announcer.OnlineUserInquiryFactory(&client_announcer.MysqlInquiry{
-		Address:  cnf.Mysql.Address,
-		Username: cnf.Mysql.Username,
-		Password: cnf.Mysql.Password,
-		Database: cnf.Mysql.DB,
-	}, &client_announcer.Redis{
-		Address:  cnf.Redis.ClusterNodes,
-		Password: cnf.Redis.Password,
-		Database: cnf.Redis.DB,
-	})
+	onlineUserInquiry, _ := client_announcer.OnlineUserInquiryFactory(
+		cnf.Mysql.Address, cnf.Mysql.Username, cnf.Mysql.Password, cnf.Mysql.DB,
+		cnf.Redis.ClusterNodes, cnf.Redis.Password, cnf.Redis.DB, cnf.Redis.PingInterval)
 
 	defer onlineUserInquiry.Close()
 

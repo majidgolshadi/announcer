@@ -37,4 +37,5 @@ func AnnounceHandler(c *gin.Context) {
 	}
 
 	cluster.SendToUsers(input.Message, users)
+	c.JSON(http.StatusOK, gin.H{"status": "OK"})
 }
