@@ -4,6 +4,52 @@ Announcer
 Announcer is an application that send xml message to client with client or component connection ([XEP-0114](http://xmpp.org/extensions/xep-0114.html)) that present some REST API to configure and send messages.
 This app initialize from toml file and zookeeper and will store it's runtime configuration in zookeeper for distribution purpose
 
+Configuration
+-------------
+```toml
+#Rest api port that application listen on
+rest_api_port=":8080"
+
+#Zookeeper service configuration for datastor and notification center usage
+[zookeeper]
+cluster_nodes="192.168.95.171:2181"
+#Znode which data with be store under
+namespace="/watch"
+
+#Mysql server which contain ws_channel_member table
+[mysql]
+address="127.0.0.1:3306"
+username="root"
+password="123"
+db="test"
+
+#Redis service configuration to get online users from
+[redis]
+cluster_nodes="127.0.0.1:6379"
+password=""
+db=0
+
+#Time in second duration that connection with redis will be check and if lost try to connect
+#In this period of time every users known as online users
+ping_pnterval=2
+
+[ejabberd]
+cluster_nodes="192.168.95.180:5222"
+default_cluster="A"
+
+
+#Only client or component can be init in init run so please attention to use only one of them
+[client]
+username="4"
+password="4"
+domain="soroush.ir"
+ping_interval=2
+
+
+[component]
+name="announcer"
+secret="announcer"
+```
 
 Rest APIs
 ---------

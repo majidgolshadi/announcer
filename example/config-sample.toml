@@ -14,6 +14,7 @@ db="test"
 cluster_nodes="127.0.0.1:6379"
 password=""
 db=0
+PingInterval=2
 
 [ejabberd]
 cluster_nodes="192.168.95.180:5222"
