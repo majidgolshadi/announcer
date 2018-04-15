@@ -14,9 +14,9 @@ func DeregisterAnnouncerHandler(c *gin.Context) {
 }
 
 type announceRequest struct {
-	Cluster string `json:"cluster"`
-	Message string `json:"message" binding:"required"`
-	ChannelId int `json:"channel_id" binding:"required"`
+	Cluster   string `json:"cluster"`
+	Message   string `json:"message" binding:"required"`
+	ChannelId int    `json:"channel_id" binding:"required"`
 }
 
 func AnnounceHandler(c *gin.Context) {
@@ -26,5 +26,8 @@ func AnnounceHandler(c *gin.Context) {
 		return
 	}
 
+	users, _ := onlineUserInq.GetOnlineUsers(input.ChannelId)
+	cluster, _ := chatConnRepo.GetCluster(input.Cluster)
 
+	cluster.SendToUsers(input.Message, users)
 }

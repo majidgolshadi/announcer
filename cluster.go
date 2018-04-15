@@ -2,9 +2,9 @@ package client_announcer
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 	"time"
-	"fmt"
 )
 
 type Cluster struct {
