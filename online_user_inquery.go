@@ -1,8 +1,6 @@
 package client_announcer
 
-import (
-	"github.com/go-redis/redis"
-)
+import "github.com/go-redis/redis"
 
 type onlineUserInquiry struct {
 	MysqlInquiry *MysqlInquiry
@@ -24,27 +22,28 @@ func OnlineUserInquiryFactory(mysqlInquiry *MysqlInquiry, redisStr *Redis) (ouq 
 		DB:       redisStr.Database,
 	})
 
-	ouq.redisConn.Ping()
+	if statusCmd := ouq.redisConn.Ping(); statusCmd.Err() != nil {
+		return nil, statusCmd.Err()
+	}
 
-	return
+	return ouq, nil
 }
 
-func (ouq *onlineUserInquiry) GetOnlineUsers(channel int) ([]string, error) {
+func (ouq *onlineUserInquiry) GetOnlineUsers(channel int) (map[string]string, error) {
 	users, err := ouq.MysqlInquiry.getChannelUsers(channel)
 	if err != nil {
 		return nil, err
 	}
 
-	var onlineUsers []string
+	var onlineUsers map[string]string
 	for users.Next() {
 		var username string
 		if err := users.Scan(&username); err != nil {
 			return nil, err
 		}
 
-		value, _ := ouq.redisConn.Get(username).Result()
-		if value != "" {
-			onlineUsers = append(onlineUsers, username)
+		if value, _ := ouq.redisConn.Get(username).Result(); value != "" {
+			onlineUsers[username] = value
 		}
 	}
 

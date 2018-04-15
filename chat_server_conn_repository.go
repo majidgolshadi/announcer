@@ -9,14 +9,14 @@ import (
 	"time"
 )
 
-type repository struct {
+type chatServerConnRepository struct {
 	clusters    map[string]*Cluster
 	zkConn      *zk.Conn
 	zkNamespace string
 }
 
-func RepositoryFactory(zookeeperAddress string, namespace string) (repo *repository, err error) {
-	repo = &repository{
+func ChatServerConnRepositoryFactory(zookeeperAddress string, namespace string) (repo *chatServerConnRepository, err error) {
+	repo = &chatServerConnRepository{
 		clusters:    make(map[string]*Cluster),
 		zkNamespace: namespace,
 	}
@@ -26,13 +26,13 @@ func RepositoryFactory(zookeeperAddress string, namespace string) (repo *reposit
 		return nil, err
 	}
 
-	//err = repo.initRepository()
+	err = repo.initRepository()
 	err = repo.watchOnZookeeper()
 
 	return
 }
 
-func (r *repository) SetCluster(name string, cluster *Cluster) error {
+func (r *chatServerConnRepository) SetCluster(name string, cluster *Cluster) error {
 	if r.clusters[name] != nil {
 		return errors.New(fmt.Sprintf("cluster %s exists", name))
 	}
@@ -42,7 +42,7 @@ func (r *repository) SetCluster(name string, cluster *Cluster) error {
 	return nil
 }
 
-func (r *repository) GetCluster(name string) (*Cluster, error) {
+func (r *chatServerConnRepository) GetCluster(name string) (*Cluster, error) {
 	if r.clusters[name] == nil {
 		return nil, errors.New(fmt.Sprintf("cluster %s does not exist", name))
 	}
@@ -50,14 +50,14 @@ func (r *repository) GetCluster(name string) (*Cluster, error) {
 	return r.clusters[name], nil
 }
 
-func (r *repository) deleteCluster(name string) {
+func (r *chatServerConnRepository) deleteCluster(name string) {
 	r.clusters[name].Close()
 	r.clusters[name] = nil
 	delete(r.clusters, name)
 }
 
 // TODO: implement zookeeper watch
-func (r *repository) watchOnZookeeper() (err error) {
+func (r *chatServerConnRepository) watchOnZookeeper() (err error) {
 	//_, _, eventCh, err := r.zkConn.ExistsW(r.zkNamespace)
 	//if err != nil {
 	//	return err
@@ -80,7 +80,7 @@ func (r *repository) watchOnZookeeper() (err error) {
 	return nil
 }
 
-func (r *repository) initRepository() error {
+func (r *chatServerConnRepository) initRepository() error {
 	data, _, err := r.zkConn.Children(r.zkNamespace)
 	if err != nil {
 		return err
@@ -101,7 +101,7 @@ func (r *repository) initRepository() error {
 	return nil
 }
 
-func (r *repository) restoreCluster(clusterData []byte) (*Cluster, error) {
+func (r *chatServerConnRepository) restoreCluster(clusterData []byte) (*Cluster, error) {
 	clusterTmp := &Cluster{}
 	if err := json.Unmarshal(clusterData, clusterTmp); err != nil {
 		return nil, err
@@ -115,7 +115,7 @@ func (r *repository) restoreCluster(clusterData []byte) (*Cluster, error) {
 	return ClusterComponentFactory(clusterTmp.Component.Name, clusterTmp.Component.Secret, clusterTmp.Addresses)
 }
 
-func (r *repository) storeCluster(name string, cluster *Cluster) error {
+func (r *chatServerConnRepository) storeCluster(name string, cluster *Cluster) error {
 	json, err := json.Marshal(cluster)
 
 	if err != nil {
@@ -123,14 +123,12 @@ func (r *repository) storeCluster(name string, cluster *Cluster) error {
 	}
 
 	path := fmt.Sprintf("%s/%s", r.zkNamespace, name)
-	println("-------------ghable shakht")
 	_, err = r.zkConn.Create(path, json, int32(0), zk.WorldACL(zk.PermAll))
-	println("bade shakht------------------")
 
 	return err
 }
 
-func (r *repository) Close() {
+func (r *chatServerConnRepository) Close() {
 	r.zkConn.Close()
 
 	for _, cluster := range r.clusters {

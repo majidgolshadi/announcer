@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 	"time"
+	"fmt"
 )
 
 type Cluster struct {
@@ -74,14 +75,23 @@ func ClusterComponentFactory(name string, secret string, nodeAddresses string) (
 }
 
 // TODO: Add sending rate
-func (cluster *Cluster) Send(msg string) error {
+func (cluster *Cluster) SendToUsers(msgTemplate string, users map[string]string) {
+	for user := range users {
+		msg := fmt.Sprintf(msgTemplate, user)
+		if err := cluster.send(msg); err != nil {
+			fmt.Sprintf("error: %s \n\ruser: %s \n\rmessage: %s", err.Error(), user, msg)
+		}
+	}
+}
+
+func (cluster *Cluster) send(msg string) error {
 	for _, conn := range cluster.connections {
 		if err := conn.Send(msg); err == nil {
 			return nil
 		}
 	}
 
-	return errors.New("can not send the message")
+	return errors.New("can not send message")
 }
 
 func (cluster *Cluster) Close() {

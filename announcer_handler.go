@@ -15,10 +15,8 @@ func DeregisterAnnouncerHandler(c *gin.Context) {
 
 type announceRequest struct {
 	Cluster string `json:"cluster"`
-	From    string `json:"from"`
-	Message string `json:"message"`
-	Group   string `json:"group"`
-	Channel string `json:"channel"`
+	Message string `json:"message" binding:"required"`
+	ChannelId int `json:"channel_id" binding:"required"`
 }
 
 func AnnounceHandler(c *gin.Context) {
@@ -27,5 +25,6 @@ func AnnounceHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"status": err.Error()})
 		return
 	}
+
 
 }

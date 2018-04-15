@@ -2,7 +2,15 @@ package client_announcer
 
 import "github.com/gin-gonic/gin"
 
-func RunHttpServer(port string) error {
+var (
+	onlineUser *onlineUserInquiry
+	chatConnRepo *chatServerConnRepository
+)
+
+func RunHttpServer(port string, inquiry *onlineUserInquiry, repository *chatServerConnRepository) error {
+	onlineUser = inquiry
+	chatConnRepo = repository
+
 	router := gin.Default()
 
 	v1 := router.Group("/v1")
