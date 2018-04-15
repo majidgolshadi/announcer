@@ -13,6 +13,7 @@ type chatServerConnRepository struct {
 	clusters    map[string]*Cluster
 	zkConn      *zk.Conn
 	zkNamespace string
+	defaultCluster string
 }
 
 func ChatServerConnRepositoryFactory(zookeeperAddress string, namespace string) (repo *chatServerConnRepository, err error) {
@@ -32,6 +33,10 @@ func ChatServerConnRepositoryFactory(zookeeperAddress string, namespace string) 
 	return
 }
 
+func (r *chatServerConnRepository) SetDefaultCluster(defaultCluster string) {
+	r.defaultCluster = defaultCluster
+}
+
 func (r *chatServerConnRepository) SetCluster(name string, cluster *Cluster) error {
 	if r.clusters[name] != nil {
 		return errors.New(fmt.Sprintf("cluster %s exists", name))
@@ -43,6 +48,10 @@ func (r *chatServerConnRepository) SetCluster(name string, cluster *Cluster) err
 }
 
 func (r *chatServerConnRepository) GetCluster(name string) (*Cluster, error) {
+	if name == "" {
+		name = r.defaultCluster
+	}
+
 	if r.clusters[name] == nil {
 		return nil, errors.New(fmt.Sprintf("cluster %s does not exist", name))
 	}

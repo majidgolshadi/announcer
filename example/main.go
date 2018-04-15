@@ -18,6 +18,7 @@ type config struct {
 
 type Ejabberd struct {
 	ClusterNodes string `toml:"cluster_nodes"`
+	DefaultCluster string `toml:"default_cluster"`
 }
 
 type Client struct {
@@ -81,11 +82,12 @@ func main() {
 	}
 
 	if err != nil {
-		println(err.Error())
+		println("erjaberd connection error:", err.Error())
 		return
 	}
 
-	chatConnRepo.SetCluster("A", cluster)
+	chatConnRepo.SetCluster(cnf.Ejabberd.DefaultCluster, cluster)
+	chatConnRepo.SetDefaultCluster(cnf.Ejabberd.DefaultCluster)
 
 	onlineUserInquiry, _ := client_announcer.OnlineUserInquiryFactory(&client_announcer.MysqlInquiry{
 		Address:  cnf.Mysql.Address,

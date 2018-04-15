@@ -35,7 +35,7 @@ func (ouq *onlineUserInquiry) GetOnlineUsers(channel int) (map[string]string, er
 		return nil, err
 	}
 
-	var onlineUsers map[string]string
+	onlineUsers := make(map[string]string)
 	for users.Next() {
 		var username string
 		if err := users.Scan(&username); err != nil {

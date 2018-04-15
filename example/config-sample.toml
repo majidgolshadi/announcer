@@ -15,8 +15,9 @@ cluster_nodes="127.0.0.1:6379"
 password=""
 db=0
 
-[ejbberd]
+[ejabberd]
 cluster_nodes="192.168.95.180:5222"
+default_cluster="A"
 
 [client]
 username="4"

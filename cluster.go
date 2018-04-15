@@ -41,7 +41,7 @@ func ClusterClientFactory(username string, password string, domain string, conne
 
 	for _, nodeAdd := range nodesAddressArray {
 		conn := &ClientConnection{}
-		if err := conn.Connect(nodeAdd, username, password, domain, time.Duration(cluster.Client.Duration)); err != nil {
+		if err := conn.Connect(nodeAdd, username, password, domain, time.Duration(cluster.Client.Duration) * time.Second); err != nil {
 			return nil, err
 		}
 

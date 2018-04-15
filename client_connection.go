@@ -28,9 +28,8 @@ func (n *ClientConnection) Connect(address string, username string, password str
 func (n *ClientConnection) keepConnectionAlive(duration time.Duration) {
 	n.keepConnectionAliveTicker = time.NewTicker(duration)
 	go func() {
-		for t := range n.keepConnectionAliveTicker.C {
+		for range n.keepConnectionAliveTicker.C {
 			n.connection.Ping()
-			println(t.Second())
 		}
 	}()
 }
