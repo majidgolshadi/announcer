@@ -75,8 +75,8 @@ func ClusterComponentFactory(name string, secret string, nodeAddresses string) (
 }
 
 // TODO: Add sending rate
-func (cluster *Cluster) SendToUsers(msgTemplate string, users map[string]string) {
-	for user := range users {
+func (cluster *Cluster) SendToUsers(msgTemplate string, users []string) {
+	for _,user := range users {
 		msg := fmt.Sprintf(msgTemplate, user)
 		if err := cluster.send(msg); err != nil {
 			fmt.Sprintf("error: %s \n\ruser: %s \n\rmessage: %s", err.Error(), user, msg)

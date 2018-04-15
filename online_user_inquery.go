@@ -29,21 +29,21 @@ func OnlineUserInquiryFactory(mysqlInquiry *MysqlInquiry, redisStr *Redis) (ouq 
 	return ouq, nil
 }
 
-func (ouq *onlineUserInquiry) GetOnlineUsers(channel int) (map[string]string, error) {
+func (ouq *onlineUserInquiry) GetOnlineUsers(channel int) ([]string, error) {
 	users, err := ouq.MysqlInquiry.getChannelUsers(channel)
 	if err != nil {
 		return nil, err
 	}
 
-	onlineUsers := make(map[string]string)
+	var onlineUsers []string
 	for users.Next() {
 		var username string
 		if err := users.Scan(&username); err != nil {
 			return nil, err
 		}
 
-		if value, _ := ouq.redisConn.Get(username).Result(); value != "" {
-			onlineUsers[username] = value
+		if value, _ := ouq.redisConn.Keys(username+"/*").Result(); len(value) != 0 {
+			onlineUsers = append(onlineUsers, username)
 		}
 	}
 
