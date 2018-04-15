@@ -60,6 +60,10 @@ func (r *Redis) UsernameExists(username string) bool {
 	return true
 }
 
+func (r *Redis) GetAllUsers() ([]string, error) {
+	return r.connection.Keys("*").Result()
+}
+
 func (r *Redis) Close() {
 	r.connection.Close()
 }

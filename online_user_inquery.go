@@ -21,6 +21,10 @@ func OnlineUserInquiryFactory(mysqlAddress string, mysqlUsername string, mysqlPa
 }
 
 func (ouq *onlineUserInquiry) GetOnlineUsers(channel int) ([]string, error) {
+	if channel < 0 {
+		return ouq.redisConn.GetAllUsers()
+	}
+
 	users, err := ouq.MysqlConn.GetChannelUsers(channel)
 	if err != nil {
 		return nil, err

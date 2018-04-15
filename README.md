@@ -71,3 +71,5 @@ Samples
 }
 ```
 > **Attention:** You should put ["%s"](https://golang.org/pkg/fmt/) instead of username who this message will be send for
+
+In order to send a message to all online users you need to set channel_id **negative number**.
