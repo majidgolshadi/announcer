@@ -28,8 +28,13 @@ func (r *chatServerClusterRepository) Save(name string, cluster *Cluster) error 
 	}
 
 	r.clusters[name] = cluster
-	path := fmt.Sprintf("%s/%s", r.zkNode, name)
-	return r.zk.save(path, cluster.toJson())
+
+	if r.zk != nil {
+		path := fmt.Sprintf("%s/%s", r.zkNode, name)
+		return r.zk.save(path, cluster.toJson())
+	}
+
+	return nil
 }
 
 func (r *chatServerClusterRepository) Get(name string) (*Cluster, error) {
@@ -106,7 +111,9 @@ func (r *chatServerClusterRepository) restoreCluster(clusterData []byte) (*Clust
 }
 
 func (r *chatServerClusterRepository) Close() {
-	r.zk.close()
+	if r.zk != nil {
+		r.zk.close()
+	}
 
 	for _, cluster := range r.clusters {
 		cluster.Close()

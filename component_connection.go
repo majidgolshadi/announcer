@@ -2,7 +2,6 @@ package client_announcer
 
 import (
 	"github.com/sheenobu/go-xco"
-	"time"
 )
 
 type ComponentConnection struct {
@@ -16,19 +15,18 @@ func (cc *ComponentConnection) Connect(address string, name string, secret strin
 		Address:      address,
 	})
 
-	return err
-}
-
-func (cc *ComponentConnection) keepConnectionAlive(duration time.Duration) {
 	go func() {
 		if err := cc.connection.Run(); err != nil {
 			println(err.Error())
 		}
 	}()
+
+	return err
 }
 
 func (cc *ComponentConnection) Send(msg string) error {
-	return cc.connection.Send(msg)
+	_, err := cc.connection.Write([]byte(msg))
+	return err
 }
 
 func (cc *ComponentConnection) Close() {

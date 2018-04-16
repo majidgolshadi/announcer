@@ -31,11 +31,11 @@ func AnnounceHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"status": err.Error()})
 	}
 
-	cluster, err := chatConnRepo.GetCluster(input.Cluster)
+	cluster, err := chatConnRepo.Get(input.Cluster)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"status": err.Error()})
 	}
 
-	cluster.SendToUsers(input.Message, users)
+	go cluster.SendToUsers(input.Message, users)
 	c.JSON(http.StatusOK, gin.H{"status": "OK"})
 }

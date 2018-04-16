@@ -4,10 +4,10 @@ import "github.com/gin-gonic/gin"
 
 var (
 	onlineUserInq *onlineUserInquiry
-	chatConnRepo  *chatServerConnRepository
+	chatConnRepo  *chatServerClusterRepository
 )
 
-func RunHttpServer(port string, inquiry *onlineUserInquiry, repository *chatServerConnRepository) error {
+func RunHttpServer(port string, inquiry *onlineUserInquiry, repository *chatServerClusterRepository) error {
 	onlineUserInq = inquiry
 	chatConnRepo = repository
 
