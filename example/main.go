@@ -63,7 +63,8 @@ func main() {
 		return
 	}
 
-	chatConnRepo, err := client_announcer.ChatServerConnRepositoryFactory(cnf.Zookeeper.ClusterNodes, cnf.Zookeeper.NameSpace)
+	chatConnRepo, err := client_announcer.ChatServerClusterRepositoryFactory(cnf.Ejabberd.DefaultCluster)
+
 	if err != nil {
 		println(err.Error())
 		return
@@ -73,12 +74,18 @@ func main() {
 
 	if cnf.Component.Secret != "" {
 		cluster, err = client_announcer.ClusterComponentFactory(
-			cnf.Component.Name, cnf.Component.Secret, cnf.Ejabberd.ClusterNodes)
+			cnf.Component.Name,
+			cnf.Component.Secret,
+			cnf.Ejabberd.ClusterNodes)
 
 	} else if cnf.Client.Password != "" {
 		cluster, err = client_announcer.ClusterClientFactory(
-			cnf.Client.Username, cnf.Client.Password, cnf.Client.Domain,
-			cnf.Client.PingInterval, cnf.Ejabberd.ClusterNodes)
+			cnf.Client.Username,
+			cnf.Client.Password,
+			cnf.Client.Domain,
+
+			cnf.Client.PingInterval,
+			cnf.Ejabberd.ClusterNodes)
 	}
 
 	if err != nil {
@@ -86,8 +93,7 @@ func main() {
 		return
 	}
 
-	chatConnRepo.SetCluster(cnf.Ejabberd.DefaultCluster, cluster)
-	chatConnRepo.SetDefaultCluster(cnf.Ejabberd.DefaultCluster)
+	chatConnRepo.Save(cnf.Ejabberd.DefaultCluster, cluster)
 
 	onlineUserInquiry, _ := client_announcer.OnlineUserInquiryFactory(
 		cnf.Mysql.Address, cnf.Mysql.Username, cnf.Mysql.Password, cnf.Mysql.DB,

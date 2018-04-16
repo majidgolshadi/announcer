@@ -15,7 +15,7 @@ type Redis struct {
 	keepConnectionAliveTicker *time.Ticker
 }
 
-func RedisClientFactory(address string, password string, db int, pingInternal int) *Redis {
+func redisClientFactory(address string, password string, db int, pingInternal int) *Redis {
 	r := &Redis{}
 	r.connection = redis.NewClient(&redis.Options{
 		Addr:     address,
@@ -51,7 +51,7 @@ func (r *Redis) connect() {
 	})
 }
 
-func (r *Redis) UsernameExists(username string) bool {
+func (r *Redis) usernameExists(username string) bool {
 	if r.connectionStatus {
 		result, _, _ := r.connection.Scan(1, username+"/*", 1).Result()
 		return len(result) > 0
@@ -60,10 +60,10 @@ func (r *Redis) UsernameExists(username string) bool {
 	return true
 }
 
-func (r *Redis) GetAllUsers() ([]string, error) {
+func (r *Redis) getAllUsers() ([]string, error) {
 	return r.connection.Keys("*").Result()
 }
 
-func (r *Redis) Close() {
+func (r *Redis) close() {
 	r.connection.Close()
 }

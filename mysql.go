@@ -15,7 +15,7 @@ type Mysql struct {
 	connection *sql.DB
 }
 
-func MysqlClientFactory(address string, username string, password string, database string) (*Mysql, error) {
+func mysqlClientFactory(address string, username string, password string, database string) (*Mysql, error) {
 	m := &Mysql{
 		address:  address,
 		username: username,
@@ -37,11 +37,11 @@ func (ms *Mysql) connect() (err error) {
 	return
 }
 
-func (ms *Mysql) GetChannelUsers(channelId int) (*sql.Rows, error) {
+func (ms *Mysql) getChannelUsers(channelId int) (*sql.Rows, error) {
 	query := fmt.Sprintf("select member_username from ws_channel_members where member_channelid='%d'", channelId)
 	return ms.connection.Query(query)
 }
 
-func (ms *Mysql) Close() {
+func (ms *Mysql) close() {
 	ms.connection.Close()
 }

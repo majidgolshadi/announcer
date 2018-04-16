@@ -1,6 +1,7 @@
 package client_announcer
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -92,6 +93,11 @@ func (cluster *Cluster) send(msg string) error {
 	}
 
 	return errors.New("can not send message")
+}
+
+func (cluster *Cluster) toJson() (result []byte) {
+	result, _ = json.Marshal(cluster)
+	return
 }
 
 func (cluster *Cluster) Close() {
