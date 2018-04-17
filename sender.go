@@ -1,6 +1,6 @@
 package client_announcer
 
-type Connection interface {
+type Sender interface {
 	Send(msg string) error
 	Close()
 }

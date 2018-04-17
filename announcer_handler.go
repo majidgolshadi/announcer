@@ -5,14 +5,6 @@ import (
 	"net/http"
 )
 
-func RegisterAnnouncerHandler(c *gin.Context) {
-	c.JSON(http.StatusBadRequest, gin.H{"status": "do idi"})
-}
-
-func DeregisterAnnouncerHandler(c *gin.Context) {
-
-}
-
 type announceRequest struct {
 	Cluster   string `json:"cluster"`
 	Message   string `json:"message" binding:"required"`

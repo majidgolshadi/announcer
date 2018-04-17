@@ -30,8 +30,9 @@ type Client struct {
 }
 
 type Component struct {
-	Name   string `toml:"name"`
-	Secret string `toml:"secret"`
+	Name         string `toml:"name"`
+	Secret       string `toml:"secret"`
+	PingInterval int    `toml:"ping_interval"`
 }
 
 type Zookeeper struct {
@@ -84,6 +85,7 @@ func main() {
 		cluster, err = client_announcer.ClusterComponentFactory(
 			cnf.Component.Name,
 			cnf.Component.Secret,
+			cnf.Component.PingInterval,
 			cnf.Ejabberd.ClusterNodes)
 
 	} else if cnf.Client.Password != "" {
