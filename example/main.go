@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/BurntSushi/toml"
 	"github.com/majidgolshadi/client-announcer"
+	"log"
 )
 
 type config struct {
@@ -54,20 +55,27 @@ type Mysql struct {
 
 func main() {
 	var (
-		cnf     config
-		cluster *client_announcer.Cluster
+		cnf          config
+		cluster      *client_announcer.Cluster
+		chatConnRepo *client_announcer.ChatServerClusterRepository
+		err          error
 	)
 
 	if _, err := toml.DecodeFile("config.toml", &cnf); err != nil {
-		println(err.Error())
+		log.Fatal("read configuration file error: ", err.Error())
 		return
 	}
 
-	chatConnRepo, err := client_announcer.ChatServerClusterRepositoryFactory(cnf.Ejabberd.DefaultCluster)
-
-	if err != nil {
-		println(err.Error())
+	if chatConnRepo, err = client_announcer.ChatServerClusterRepositoryFactory(cnf.Ejabberd.DefaultCluster); err != nil {
+		log.Fatal("create repo error: ", err.Error())
 		return
+	}
+
+	if cnf.Zookeeper.ClusterNodes != "" {
+		if err = chatConnRepo.SetZookeeperAsDataStore(cnf.Zookeeper.ClusterNodes, cnf.Zookeeper.NameSpace); err != nil {
+			log.Fatal("set zookeeper as datastore error: ", err.Error())
+			return
+		}
 	}
 
 	defer chatConnRepo.Close()
@@ -89,7 +97,7 @@ func main() {
 	}
 
 	if err != nil {
-		println("erjaberd connection error:", err.Error())
+		log.Fatal("erjaberd connection error:", err.Error())
 		return
 	}
 

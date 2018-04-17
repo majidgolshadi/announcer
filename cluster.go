@@ -80,7 +80,7 @@ func (cluster *Cluster) SendToUsers(msgTemplate string, users []string) {
 	for _, user := range users {
 		msg := fmt.Sprintf(msgTemplate, user)
 		if err := cluster.send(msg); err != nil {
-			fmt.Sprintf("error: %s \n\ruser: %s \n\rmessage: %s", err.Error(), user, msg)
+			fmt.Printf("error: %s user: %s message: %s", err.Error(), user, msg)
 		}
 	}
 }

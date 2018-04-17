@@ -6,15 +6,15 @@ import (
 	"fmt"
 )
 
-type chatServerClusterRepository struct {
+type ChatServerClusterRepository struct {
 	clusters       map[string]*Cluster
 	zk             *zookeeper
 	zkNode         string
 	defaultCluster string
 }
 
-func ChatServerClusterRepositoryFactory(defaultCluster string) (repo *chatServerClusterRepository, err error) {
-	repo = &chatServerClusterRepository{
+func ChatServerClusterRepositoryFactory(defaultCluster string) (repo *ChatServerClusterRepository, err error) {
+	repo = &ChatServerClusterRepository{
 		clusters:       make(map[string]*Cluster),
 		defaultCluster: defaultCluster,
 	}
@@ -22,7 +22,7 @@ func ChatServerClusterRepositoryFactory(defaultCluster string) (repo *chatServer
 	return
 }
 
-func (r *chatServerClusterRepository) Save(name string, cluster *Cluster) error {
+func (r *ChatServerClusterRepository) Save(name string, cluster *Cluster) error {
 	if r.clusters[name] != nil {
 		return errors.New(fmt.Sprintf("cluster %s exists", name))
 	}
@@ -37,7 +37,7 @@ func (r *chatServerClusterRepository) Save(name string, cluster *Cluster) error 
 	return nil
 }
 
-func (r *chatServerClusterRepository) Get(name string) (*Cluster, error) {
+func (r *ChatServerClusterRepository) Get(name string) (*Cluster, error) {
 	if name == "" {
 		name = r.defaultCluster
 	}
@@ -49,13 +49,13 @@ func (r *chatServerClusterRepository) Get(name string) (*Cluster, error) {
 	return r.clusters[name], nil
 }
 
-func (r *chatServerClusterRepository) Delete(name string) {
+func (r *ChatServerClusterRepository) Delete(name string) {
 	r.clusters[name].Close()
 	r.clusters[name] = nil
 	delete(r.clusters, name)
 }
 
-func (r *chatServerClusterRepository) ListenToZookeeper(zookeeperAddress string, zkNode string) (err error) {
+func (r *ChatServerClusterRepository) SetZookeeperAsDataStore(zookeeperAddress string, zkNode string) (err error) {
 	if r.zk, err = zookeeperFactory(zookeeperAddress); err != nil {
 		return err
 	}
@@ -79,7 +79,7 @@ func (r *chatServerClusterRepository) ListenToZookeeper(zookeeperAddress string,
 	return
 }
 
-func (r *chatServerClusterRepository) append(zNode string) error {
+func (r *ChatServerClusterRepository) append(zNode string) error {
 	path := fmt.Sprintf("%s/%s", r.zkNode, zNode)
 	clusterJson, err := r.zk.get(path)
 	if err != nil {
@@ -95,7 +95,7 @@ func (r *chatServerClusterRepository) append(zNode string) error {
 	return nil
 }
 
-func (r *chatServerClusterRepository) restoreCluster(clusterData []byte) (*Cluster, error) {
+func (r *ChatServerClusterRepository) restoreCluster(clusterData []byte) (*Cluster, error) {
 	clusterTmp := &Cluster{}
 	if err := json.Unmarshal(clusterData, clusterTmp); err != nil {
 		return nil, err
@@ -110,7 +110,7 @@ func (r *chatServerClusterRepository) restoreCluster(clusterData []byte) (*Clust
 	return ClusterComponentFactory(clusterTmp.Component.Name, clusterTmp.Component.Secret, clusterTmp.Addresses)
 }
 
-func (r *chatServerClusterRepository) Close() {
+func (r *ChatServerClusterRepository) Close() {
 	if r.zk != nil {
 		r.zk.close()
 	}
