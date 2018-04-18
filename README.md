@@ -1,29 +1,33 @@
 
 Announcer
 =========
-Announcer is an application that send xml message to client with client or component connection ([XEP-0114](http://xmpp.org/extensions/xep-0114.html)) that present some REST API to configure and send messages.
-This app initialize from toml file and zookeeper and will store it's runtime configuration in zookeeper for distribution purpose
+Announcer is an interface for send xml message to online clients.
+
+In order to communicate with ejabberd servers it use client or component connections([XEP-0114](http://xmpp.org/extensions/xep-0114.html)).
+
+This app initialize from [toml](https://github.com/toml-lang/toml) file and use zookeeper as a runtime configuration initializer and data store.
+If you want to run this application standalone you don't need to config zookeeper part.
 
 Configuration
 -------------
 ```toml
-#Rest api port that application listen on
+#The port that application present rest api on
 rest_api_port=":8080"
 
-#Zookeeper service configuration for datastor and notification center usage
+#Zookeeper connection configuration for datastore and notification center usage
+####this configuration is optional###
 [zookeeper]
 cluster_nodes="192.168.95.171:2181"
-#Znode which data with be store under
-namespace="/watch"
+namespace="/watch" #Znode which data will be saved under
 
-#Mysql server which contain ws_channel_member table
+#Mysql connection configuration which contain ws_channel_member table
 [mysql]
 address="127.0.0.1:3306"
 username="root"
 password="123"
 db="test"
 
-#Redis service configuration to get online users from
+#Redis connection configuration to get online users from
 [redis]
 cluster_nodes="127.0.0.1:6379"
 password=""
@@ -36,21 +40,20 @@ check_interval=2
 cluster_nodes="192.168.95.180:5222"
 default_cluster="A"
 
-
-#Only client or component can be init in init run so please attention to use only one of them
+#Every cluster can ONLY has Client or Component connection
+#Please attention to use only one of them
 [client]
 username="4"
 password="4"
 domain="soroush.ir"
 ping_interval=2
-rate_limit=123123 #sent message/sec
-
+rate_limit=123123 #Send message/sec
 
 [component]
 name="announcer"
 secret="announcer"
 ping_interval=2
-rate_limit=123123 #sent message/sec
+rate_limit=123123 #Send message/sec
 ```
 
 Rest APIs
