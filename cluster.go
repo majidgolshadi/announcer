@@ -3,15 +3,16 @@ package client_announcer
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type Cluster struct {
 	Client      *Client
 	Component   *Component
 	connections []Sender
-	Addresses   string
+	Addresses   []string
 	RateLimit   int
 	throttle    <-chan time.Time
 }
@@ -29,7 +30,7 @@ type Component struct {
 	PingInterval int
 }
 
-func ClusterClientFactory(nodeAddresses string, username string, password string, domain string, pingIntervalDuration int, rateLimit int) (*Cluster, error) {
+func ClusterClientFactory(nodeAddresses []string, username string, password string, domain string, pingIntervalDuration int, rateLimit int) (*Cluster, error) {
 	cluster := &Cluster{
 		Addresses: nodeAddresses,
 		RateLimit: rateLimit,
@@ -42,8 +43,7 @@ func ClusterClientFactory(nodeAddresses string, username string, password string
 		},
 	}
 
-	ejabberdAddresses := strings.Split(nodeAddresses, ",")
-	for _, nodeAdd := range ejabberdAddresses {
+	for _, nodeAdd := range cluster.Addresses {
 		conn := &ClientSender{}
 		if err := conn.Connect(nodeAdd, username, password, domain, time.Duration(cluster.Client.PingInterval)*time.Second); err != nil {
 			return nil, err
@@ -55,7 +55,7 @@ func ClusterClientFactory(nodeAddresses string, username string, password string
 	return cluster, nil
 }
 
-func ClusterComponentFactory(nodeAddresses string, name string, secret string, pingIntervalDuration int, rateLimit int) (*Cluster, error) {
+func ClusterComponentFactory(nodeAddresses []string, name string, secret string, pingIntervalDuration int, rateLimit int) (*Cluster, error) {
 	cluster := &Cluster{
 		Addresses: nodeAddresses,
 		RateLimit: rateLimit,
@@ -67,8 +67,7 @@ func ClusterComponentFactory(nodeAddresses string, name string, secret string, p
 		},
 	}
 
-	ejabberdAddresses := strings.Split(nodeAddresses, ",")
-	for _, nodeAdd := range ejabberdAddresses {
+	for _, nodeAdd := range cluster.Addresses {
 		conn := &ComponentSender{}
 		if err := conn.Connect(nodeAdd, name, secret, time.Duration(cluster.Component.PingInterval)*time.Second); err != nil {
 			return nil, err
@@ -86,17 +85,22 @@ func (cluster *Cluster) SendToUsers(msgTemplate string, users []string) {
 
 		msg := fmt.Sprintf(msgTemplate, user)
 		if err := cluster.send(msg); err != nil {
-			fmt.Printf("error='%s' user='%s' message='%s' \n", err.Error(), user, msg)
+			log.WithFields(log.Fields{
+				"error": err.Error(),
+				"user": user,
+				"message": msg}).Error("can't send message")
 		}
 	}
 }
 
 func (cluster *Cluster) send(msg string) error {
 	var err error
-	for _, conn := range cluster.connections {
+	for index, conn := range cluster.connections {
 		if err = conn.Send(msg); err == nil {
 			return nil
 		}
+
+		log.Error("send message to server ", cluster.Addresses[index], " failed")
 	}
 
 	return err

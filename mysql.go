@@ -1,8 +1,8 @@
 package client_announcer
 
 import (
-	"database/sql"
 	"fmt"
+	"database/sql"
 	_ "github.com/go-sql-driver/mysql"
 )
 

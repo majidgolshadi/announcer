@@ -3,7 +3,8 @@ package main
 import (
 	"github.com/BurntSushi/toml"
 	"github.com/majidgolshadi/client-announcer"
-	"log"
+	log "github.com/sirupsen/logrus"
+	"strings"
 )
 
 type config struct {
@@ -65,27 +66,26 @@ func main() {
 	)
 
 	if _, err := toml.DecodeFile("config.toml", &cnf); err != nil {
-		log.Fatal("read configuration file error: ", err.Error())
-		return
+		log.Fatal("read configuration file error ", err.Error())
 	}
 
 	if chatConnRepo, err = client_announcer.ChatServerClusterRepositoryFactory(cnf.Ejabberd.DefaultCluster); err != nil {
-		log.Fatal("create repo error: ", err.Error())
-		return
+		log.Fatal("create repo error ", err.Error())
 	}
 
 	if cnf.Zookeeper.ClusterNodes != "" {
 		if err = chatConnRepo.SetZookeeperAsDataStore(cnf.Zookeeper.ClusterNodes, cnf.Zookeeper.NameSpace); err != nil {
-			log.Fatal("set zookeeper as datastore error: ", err.Error())
+			log.Fatal("set zookeeper as data-store error ", err.Error())
 			return
 		}
 	}
 
 	defer chatConnRepo.Close()
 
+	ejabberdNodeAdd := strings.Split(cnf.Ejabberd.ClusterNodes, ",")
 	if cnf.Component.Secret != "" {
 		cluster, err = client_announcer.ClusterComponentFactory(
-			cnf.Ejabberd.ClusterNodes,
+			ejabberdNodeAdd,
 			cnf.Component.Name,
 			cnf.Component.Secret,
 			cnf.Component.PingInterval,
@@ -93,7 +93,7 @@ func main() {
 
 	} else if cnf.Client.Password != "" {
 		cluster, err = client_announcer.ClusterClientFactory(
-			cnf.Ejabberd.ClusterNodes,
+			ejabberdNodeAdd,
 			cnf.Client.Username,
 			cnf.Client.Password,
 			cnf.Client.Domain,
@@ -102,13 +102,13 @@ func main() {
 	}
 
 	if err != nil {
-		log.Fatal("erjaberd connection error: ", err.Error())
+		log.Fatal("erjaberd create connection error ", err.Error())
 		return
 	}
 
 	err = chatConnRepo.Save(cnf.Ejabberd.DefaultCluster, cluster)
 	if err != nil {
-		log.Fatal("store in repository error: ", err.Error())
+		log.Fatal("store in repository error ", err.Error())
 		return
 	}
 

@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type ChatServerClusterRepository struct {
@@ -63,7 +65,7 @@ func (r *ChatServerClusterRepository) SetZookeeperAsDataStore(zookeeperAddress s
 	go func() {
 		chEvent, err := r.zk.childrenW(zkNode)
 		if err != nil {
-			println("children watcher error: ", err.Error())
+			log.Error("children watcher error: ", err.Error())
 			return
 		}
 

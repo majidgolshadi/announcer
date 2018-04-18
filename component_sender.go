@@ -2,8 +2,8 @@ package client_announcer
 
 import (
 	"github.com/sheenobu/go-xco"
-	"log"
 	"time"
+	"log"
 )
 
 type ComponentSender struct {
@@ -20,7 +20,7 @@ func (cs *ComponentSender) Connect(address string, name string, secret string, d
 
 	go func() {
 		if err := cs.connection.Run(); err != nil {
-			log.Println("ejabberd component connection error: ", err.Error())
+			log.Fatal("ejabberd component connection error: ", err.Error())
 		}
 	}()
 
