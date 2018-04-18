@@ -6,7 +6,7 @@ type onlineUserInquiry struct {
 }
 
 func OnlineUserInquiryFactory(mysqlAddress string, mysqlUsername string, mysqlPassword string, mysqlDatabase string,
-	redisAddr string, redisPassword string, redisDb int, redisPingInterval int) (ouq *onlineUserInquiry, err error) {
+	redisAddr string, redisPassword string, redisDb int, redisCheckInterval int) (ouq *onlineUserInquiry, err error) {
 
 	ouq = &onlineUserInquiry{}
 	ouq.mysqlConn, err = mysqlClientFactory(mysqlAddress, mysqlUsername, mysqlPassword, mysqlDatabase)
@@ -15,7 +15,7 @@ func OnlineUserInquiryFactory(mysqlAddress string, mysqlUsername string, mysqlPa
 		return nil, err
 	}
 
-	ouq.redisConn = redisClientFactory(redisAddr, redisPassword, redisDb, redisPingInterval)
+	ouq.redisConn = redisClientFactory(redisAddr, redisPassword, redisDb, redisCheckInterval)
 
 	return ouq, nil
 }

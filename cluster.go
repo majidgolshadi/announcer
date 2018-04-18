@@ -12,8 +12,8 @@ type Cluster struct {
 	Component   *Component
 	connections []Sender
 	Addresses   string
-	RateLimit int
-	throttle <-chan time.Time
+	RateLimit   int
+	throttle    <-chan time.Time
 }
 
 type Client struct {
@@ -33,7 +33,7 @@ func ClusterClientFactory(nodeAddresses string, username string, password string
 	cluster := &Cluster{
 		Addresses: nodeAddresses,
 		RateLimit: rateLimit,
-		throttle: time.Tick(time.Second / time.Duration(rateLimit)),
+		throttle:  time.Tick(time.Second / time.Duration(rateLimit)),
 		Client: &Client{
 			Username:     username,
 			Password:     password,
@@ -59,7 +59,7 @@ func ClusterComponentFactory(nodeAddresses string, name string, secret string, p
 	cluster := &Cluster{
 		Addresses: nodeAddresses,
 		RateLimit: rateLimit,
-		throttle: time.Tick(time.Second / time.Duration(rateLimit)),
+		throttle:  time.Tick(time.Second / time.Duration(rateLimit)),
 		Component: &Component{
 			Name:         name,
 			Secret:       secret,

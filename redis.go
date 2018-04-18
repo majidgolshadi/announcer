@@ -15,7 +15,7 @@ type Redis struct {
 	keepConnectionAliveTicker *time.Ticker
 }
 
-func redisClientFactory(address string, password string, db int, pingInternal int) *Redis {
+func redisClientFactory(address string, password string, db int, checkInternal int) *Redis {
 	r := &Redis{}
 	r.connection = redis.NewClient(&redis.Options{
 		Addr:     address,
@@ -23,7 +23,7 @@ func redisClientFactory(address string, password string, db int, pingInternal in
 		DB:       db,
 	})
 
-	r.keepConnectionAlive(time.Duration(pingInternal) * time.Second)
+	r.keepConnectionAlive(time.Duration(checkInternal) * time.Second)
 
 	return r
 }

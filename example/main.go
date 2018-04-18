@@ -27,14 +27,14 @@ type Client struct {
 	Password     string `toml:"password"`
 	Domain       string `toml:"domain"`
 	PingInterval int    `toml:"ping_interval"`
-	RateLimit int    `toml:"rate_limit"`
+	RateLimit    int    `toml:"rate_limit"`
 }
 
 type Component struct {
 	Name         string `toml:"name"`
 	Secret       string `toml:"secret"`
 	PingInterval int    `toml:"ping_interval"`
-	RateLimit int    `toml:"rate_limit"`
+	RateLimit    int    `toml:"rate_limit"`
 }
 
 type Zookeeper struct {
@@ -43,10 +43,10 @@ type Zookeeper struct {
 }
 
 type Redis struct {
-	ClusterNodes string `toml:"cluster_nodes"`
-	Password     string `toml:"password"`
-	DB           int    `toml:"db"`
-	PingInterval int    `toml:"ping_interval"`
+	ClusterNodes  string `toml:"cluster_nodes"`
+	Password      string `toml:"password"`
+	DB            int    `toml:"db"`
+	CheckInterval int    `toml:"check_interval"`
 }
 
 type Mysql struct {
@@ -114,7 +114,7 @@ func main() {
 
 	onlineUserInquiry, _ := client_announcer.OnlineUserInquiryFactory(
 		cnf.Mysql.Address, cnf.Mysql.Username, cnf.Mysql.Password, cnf.Mysql.DB,
-		cnf.Redis.ClusterNodes, cnf.Redis.Password, cnf.Redis.DB, cnf.Redis.PingInterval)
+		cnf.Redis.ClusterNodes, cnf.Redis.Password, cnf.Redis.DB, cnf.Redis.CheckInterval)
 
 	defer onlineUserInquiry.Close()
 

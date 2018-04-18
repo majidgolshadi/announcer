@@ -28,10 +28,9 @@ db="test"
 cluster_nodes="127.0.0.1:6379"
 password=""
 db=0
-
 #Time in second duration that connection with redis will be check and if lost try to connect
 #In this period of time every users known as online users
-ping_pnterval=2
+check_interval=2
 
 [ejabberd]
 cluster_nodes="192.168.95.180:5222"
