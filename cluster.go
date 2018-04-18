@@ -14,7 +14,6 @@ type Cluster struct {
 	connections []Sender
 	Addresses   []string
 	RateLimit   int
-	throttle    <-chan time.Time
 }
 
 type Client struct {
@@ -34,7 +33,6 @@ func ClusterClientFactory(nodeAddresses []string, username string, password stri
 	cluster := &Cluster{
 		Addresses: nodeAddresses,
 		RateLimit: rateLimit,
-		throttle:  time.Tick(time.Second / time.Duration(rateLimit)),
 		Client: &Client{
 			Username:     username,
 			Password:     password,
@@ -59,7 +57,6 @@ func ClusterComponentFactory(nodeAddresses []string, name string, secret string,
 	cluster := &Cluster{
 		Addresses: nodeAddresses,
 		RateLimit: rateLimit,
-		throttle:  time.Tick(time.Second / time.Duration(rateLimit)),
 		Component: &Component{
 			Name:         name,
 			Secret:       secret,
@@ -80,8 +77,16 @@ func ClusterComponentFactory(nodeAddresses []string, name string, secret string,
 }
 
 func (cluster *Cluster) SendToUsers(msgTemplate string, users []string) {
+	sleepTime := time.Second / time.Duration(cluster.RateLimit)
+
+	if sleepTime == 0 {
+		sleepTime = 1
+	}
+
+	ticker := time.NewTicker(sleepTime)
+
 	for _, user := range users {
-		<-cluster.throttle
+		<-ticker.C
 
 		msg := fmt.Sprintf(msgTemplate, user)
 		if err := cluster.send(msg); err != nil {
@@ -91,6 +96,8 @@ func (cluster *Cluster) SendToUsers(msgTemplate string, users []string) {
 				"message": msg}).Error("can't send message")
 		}
 	}
+
+	ticker.Stop()
 }
 
 func (cluster *Cluster) send(msg string) error {
