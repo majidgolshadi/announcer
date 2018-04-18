@@ -44,11 +44,14 @@ username="4"
 password="4"
 domain="soroush.ir"
 ping_interval=2
+rate_limit=123123 #sent message/sec
 
 
 [component]
 name="announcer"
 secret="announcer"
+ping_interval=2
+rate_limit=123123 #sent message/sec
 ```
 
 Rest APIs

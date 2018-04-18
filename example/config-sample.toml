@@ -25,3 +25,4 @@ username="4"
 password="4"
 domain="soroush.ir"
 ping_interval=2
+rate_limit=4550

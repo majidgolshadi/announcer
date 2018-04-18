@@ -103,11 +103,13 @@ func (r *ChatServerClusterRepository) restoreCluster(clusterData []byte) (*Clust
 
 	if clusterTmp.Client != nil {
 		return ClusterClientFactory(
+			clusterTmp.Addresses,
 			clusterTmp.Client.Username, clusterTmp.Client.Password, clusterTmp.Client.Domain,
-			clusterTmp.Client.PingInterval, clusterTmp.Addresses)
+			clusterTmp.Client.PingInterval, clusterTmp.RateLimit)
 	}
 
-	return ClusterComponentFactory(clusterTmp.Component.Name, clusterTmp.Component.Secret, clusterTmp.Component.PingInterval, clusterTmp.Addresses)
+	return ClusterComponentFactory(clusterTmp.Addresses,
+		clusterTmp.Component.Name, clusterTmp.Component.Secret, clusterTmp.Component.PingInterval, clusterTmp.RateLimit)
 }
 
 func (r *ChatServerClusterRepository) Close() {

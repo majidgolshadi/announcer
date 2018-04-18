@@ -12,6 +12,8 @@ type Cluster struct {
 	Component   *Component
 	connections []Sender
 	Addresses   string
+	RateLimit int
+	throttle <-chan time.Time
 }
 
 type Client struct {
@@ -27,20 +29,21 @@ type Component struct {
 	PingInterval int
 }
 
-func ClusterClientFactory(username string, password string, domain string, pingIntervalDuration int, nodeAddresses string) (*Cluster, error) {
+func ClusterClientFactory(nodeAddresses string, username string, password string, domain string, pingIntervalDuration int, rateLimit int) (*Cluster, error) {
 	cluster := &Cluster{
+		Addresses: nodeAddresses,
+		RateLimit: rateLimit,
+		throttle: time.Tick(time.Second / time.Duration(rateLimit)),
 		Client: &Client{
 			Username:     username,
 			Password:     password,
 			Domain:       domain,
 			PingInterval: pingIntervalDuration,
 		},
-		Addresses: nodeAddresses,
 	}
 
-	nodesAddressArray := strings.Split(nodeAddresses, ",")
-
-	for _, nodeAdd := range nodesAddressArray {
+	ejabberdAddresses := strings.Split(nodeAddresses, ",")
+	for _, nodeAdd := range ejabberdAddresses {
 		conn := &ClientSender{}
 		if err := conn.Connect(nodeAdd, username, password, domain, time.Duration(cluster.Client.PingInterval)*time.Second); err != nil {
 			return nil, err
@@ -52,19 +55,20 @@ func ClusterClientFactory(username string, password string, domain string, pingI
 	return cluster, nil
 }
 
-func ClusterComponentFactory(name string, secret string, pingIntervalDuration int, nodeAddresses string) (*Cluster, error) {
+func ClusterComponentFactory(nodeAddresses string, name string, secret string, pingIntervalDuration int, rateLimit int) (*Cluster, error) {
 	cluster := &Cluster{
+		Addresses: nodeAddresses,
+		RateLimit: rateLimit,
+		throttle: time.Tick(time.Second / time.Duration(rateLimit)),
 		Component: &Component{
 			Name:         name,
 			Secret:       secret,
 			PingInterval: pingIntervalDuration,
 		},
-		Addresses: nodeAddresses,
 	}
 
-	nodesAddressArray := strings.Split(nodeAddresses, ",")
-
-	for _, nodeAdd := range nodesAddressArray {
+	ejabberdAddresses := strings.Split(nodeAddresses, ",")
+	for _, nodeAdd := range ejabberdAddresses {
 		conn := &ComponentSender{}
 		if err := conn.Connect(nodeAdd, name, secret, time.Duration(cluster.Component.PingInterval)*time.Second); err != nil {
 			return nil, err
@@ -76,9 +80,10 @@ func ClusterComponentFactory(name string, secret string, pingIntervalDuration in
 	return cluster, nil
 }
 
-// TODO: Add sending rate
 func (cluster *Cluster) SendToUsers(msgTemplate string, users []string) {
 	for _, user := range users {
+		<-cluster.throttle
+
 		msg := fmt.Sprintf(msgTemplate, user)
 		if err := cluster.send(msg); err != nil {
 			fmt.Printf("error='%s' user='%s' message='%s' \n", err.Error(), user, msg)

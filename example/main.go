@@ -27,12 +27,14 @@ type Client struct {
 	Password     string `toml:"password"`
 	Domain       string `toml:"domain"`
 	PingInterval int    `toml:"ping_interval"`
+	RateLimit int    `toml:"rate_limit"`
 }
 
 type Component struct {
 	Name         string `toml:"name"`
 	Secret       string `toml:"secret"`
 	PingInterval int    `toml:"ping_interval"`
+	RateLimit int    `toml:"rate_limit"`
 }
 
 type Zookeeper struct {
@@ -83,27 +85,32 @@ func main() {
 
 	if cnf.Component.Secret != "" {
 		cluster, err = client_announcer.ClusterComponentFactory(
+			cnf.Ejabberd.ClusterNodes,
 			cnf.Component.Name,
 			cnf.Component.Secret,
 			cnf.Component.PingInterval,
-			cnf.Ejabberd.ClusterNodes)
+			cnf.Component.RateLimit)
 
 	} else if cnf.Client.Password != "" {
 		cluster, err = client_announcer.ClusterClientFactory(
+			cnf.Ejabberd.ClusterNodes,
 			cnf.Client.Username,
 			cnf.Client.Password,
 			cnf.Client.Domain,
-
 			cnf.Client.PingInterval,
-			cnf.Ejabberd.ClusterNodes)
+			cnf.Client.RateLimit)
 	}
 
 	if err != nil {
-		log.Fatal("erjaberd connection error:", err.Error())
+		log.Fatal("erjaberd connection error: ", err.Error())
 		return
 	}
 
-	chatConnRepo.Save(cnf.Ejabberd.DefaultCluster, cluster)
+	err = chatConnRepo.Save(cnf.Ejabberd.DefaultCluster, cluster)
+	if err != nil {
+		log.Fatal("store in repository error: ", err.Error())
+		return
+	}
 
 	onlineUserInquiry, _ := client_announcer.OnlineUserInquiryFactory(
 		cnf.Mysql.Address, cnf.Mysql.Username, cnf.Mysql.Password, cnf.Mysql.DB,
