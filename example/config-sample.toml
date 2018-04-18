@@ -1,5 +1,6 @@
 rest_api_port=":8080"
 
+#Optional
 [zookeeper]
 cluster_nodes="192.168.95.171:2181"
 namespace="/watch"
@@ -14,15 +15,23 @@ db="test"
 cluster_nodes="127.0.0.1:6379"
 password=""
 db=0
-PingInterval=2
+check_interval=2 #Second
 
+#For component define ejabberd port 8889
+#For client define ejabberd port 5222
 [ejabberd]
-cluster_nodes="192.168.95.180:5222"
+cluster_nodes="192.168.95.180:5222,192.168.95.181:5222"
 default_cluster="A"
 
 [client]
 username="4"
 password="4"
 domain="soroush.ir"
-ping_interval=2
-rate_limit=4550
+ping_interval=2 #Second
+rate_limit=4550 #msg/sec
+
+[component]
+name="announcer"
+secret="announcer"
+ping_interval=2 #Second
+rate_limit=4550 #msg/sec
