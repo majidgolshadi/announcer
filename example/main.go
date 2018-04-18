@@ -5,10 +5,14 @@ import (
 	"github.com/majidgolshadi/client-announcer"
 	log "github.com/sirupsen/logrus"
 	"strings"
+
+	"net/http"
+	_ "net/http/pprof"
 )
 
 type config struct {
 	HttpPort string `toml:"rest_api_port"`
+	DebugPort string `toml:"debug_port"`
 
 	Ejabberd  Ejabberd
 	Client    Client
@@ -57,6 +61,8 @@ type Mysql struct {
 	DB       string `toml:"db"`
 }
 
+
+
 func main() {
 	var (
 		cnf          config
@@ -68,6 +74,10 @@ func main() {
 	if _, err := toml.DecodeFile("config.toml", &cnf); err != nil {
 		log.Fatal("read configuration file error ", err.Error())
 	}
+
+	go func() {
+		log.Println(http.ListenAndServe(cnf.DebugPort, nil))
+	}()
 
 	if chatConnRepo, err = client_announcer.ChatServerClusterRepositoryFactory(cnf.Ejabberd.DefaultCluster); err != nil {
 		log.Fatal("create repo error ", err.Error())
@@ -117,6 +127,5 @@ func main() {
 		cnf.Redis.ClusterNodes, cnf.Redis.Password, cnf.Redis.DB, cnf.Redis.CheckInterval)
 
 	defer onlineUserInquiry.Close()
-
 	client_announcer.RunHttpServer(cnf.HttpPort, onlineUserInquiry, chatConnRepo)
 }

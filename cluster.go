@@ -88,13 +88,15 @@ func (cluster *Cluster) SendToUsers(msgTemplate string, users []string) {
 	for _, user := range users {
 		<-ticker.C
 
-		msg := fmt.Sprintf(msgTemplate, user)
-		if err := cluster.send(msg); err != nil {
-			log.WithFields(log.Fields{
-				"error": err.Error(),
-				"user": user,
-				"message": msg}).Error("can't send message")
-		}
+		go func() {
+			msg := fmt.Sprintf(msgTemplate, user)
+			if err := cluster.send(msg); err != nil {
+				log.WithFields(log.Fields{
+					"error": err.Error(),
+					"user": user,
+					"message": msg}).Error("can't send message")
+			}
+		}()
 	}
 
 	ticker.Stop()

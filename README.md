@@ -13,6 +13,8 @@ Configuration
 ```toml
 #The port that application present rest api on
 rest_api_port=":8080"
+#The port that application dubuging port listen on
+debug_port=":6060"
 
 #Zookeeper connection configuration for datastore and notification center usage
 ####this configuration is optional###
@@ -78,3 +80,9 @@ Samples
 > **Attention:** You should put ["%s"](https://golang.org/pkg/fmt/) instead of username who this message will be send for
 
 In order to send a message to all online users you need to set channel_id **negative number**.
+
+
+Debugging
+---------
+Call `http://localhost:<debug_port>/debug/pprof/trace?seconds=5` to got 5 second of application trace file and then you can see application trace with
+`go tool trace <DOWNLOADED_FILE_PATH>`
