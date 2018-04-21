@@ -1,17 +1,17 @@
 package main
 
 import (
+	"net/http"
+	_ "net/http/pprof"
+	"strings"
+
 	"github.com/BurntSushi/toml"
 	"github.com/majidgolshadi/client-announcer"
 	log "github.com/sirupsen/logrus"
-	"strings"
-
-	"net/http"
-	_ "net/http/pprof"
 )
 
 type config struct {
-	HttpPort string `toml:"rest_api_port"`
+	HttpPort  string `toml:"rest_api_port"`
 	DebugPort string `toml:"debug_port"`
 
 	Ejabberd  Ejabberd
@@ -25,6 +25,7 @@ type config struct {
 type Ejabberd struct {
 	ClusterNodes   string `toml:"cluster_nodes"`
 	DefaultCluster string `toml:"default_cluster"`
+	RateLimit    int    `toml:"rate_limit"`
 }
 
 type Client struct {
@@ -32,14 +33,12 @@ type Client struct {
 	Password     string `toml:"password"`
 	Domain       string `toml:"domain"`
 	PingInterval int    `toml:"ping_interval"`
-	RateLimit    int    `toml:"rate_limit"`
 }
 
 type Component struct {
 	Name         string `toml:"name"`
 	Secret       string `toml:"secret"`
 	PingInterval int    `toml:"ping_interval"`
-	RateLimit    int    `toml:"rate_limit"`
 }
 
 type Zookeeper struct {
@@ -60,8 +59,6 @@ type Mysql struct {
 	Password string `toml:"password"`
 	DB       string `toml:"db"`
 }
-
-
 
 func main() {
 	var (
@@ -92,26 +89,24 @@ func main() {
 
 	defer chatConnRepo.Close()
 
-	ejabberdNodeAdd := strings.Split(cnf.Ejabberd.ClusterNodes, ",")
-	if cnf.Component.Secret != "" {
-		cluster, err = client_announcer.ClusterComponentFactory(
-			ejabberdNodeAdd,
-			cnf.Component.Name,
-			cnf.Component.Secret,
-			cnf.Component.PingInterval,
-			cnf.Component.RateLimit)
-
-	} else if cnf.Client.Password != "" {
-		cluster, err = client_announcer.ClusterClientFactory(
-			ejabberdNodeAdd,
-			cnf.Client.Username,
-			cnf.Client.Password,
-			cnf.Client.Domain,
-			cnf.Client.PingInterval,
-			cnf.Client.RateLimit)
+	cluster = &client_announcer.Cluster{
+		Addresses: strings.Split(cnf.Ejabberd.ClusterNodes, ","),
+		RateLimit: cnf.Ejabberd.RateLimit,
 	}
 
-	if err != nil {
+	if cnf.Component.Secret != "" {
+		cluster.Component.Name = cnf.Component.Name
+		cluster.Component.Secret = cnf.Component.Secret
+		cluster.Component.PingInterval = cnf.Component.PingInterval
+
+	} else if cnf.Client.Password != "" {
+		cluster.Client.Username = cnf.Client.Username
+		cluster.Client.Password = cnf.Client.Password
+		cluster.Client.Domain = cnf.Client.Domain
+		cluster.Client.PingInterval = cnf.Client.PingInterval
+	}
+
+	if err = cluster.Connect();err != nil {
 		log.Fatal("erjaberd create connection error ", err.Error())
 		return
 	}

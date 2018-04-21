@@ -1,19 +1,18 @@
 
 Announcer
 =========
-Announcer is an interface for send xml message to online clients.
+Announcer is an interface for send xml message to online users.
 
-In order to communicate with ejabberd servers it use client or component connections([XEP-0114](http://xmpp.org/extensions/xep-0114.html)).
+In order to communicate with ejabberd servers it can use client or component connections([XEP-0114](http://xmpp.org/extensions/xep-0114.html)) based on configuration.
 
-This app initialize from [toml](https://github.com/toml-lang/toml) file and use zookeeper as a runtime configuration initializer and data store.
+This app initialize from [toml](https://github.com/toml-lang/toml) file for standalone and use zookeeper as a runtime configuration initializer and data store for multi node installation.
 If you want to run this application standalone you don't need to config zookeeper part.
 
 Configuration
 -------------
 ```toml
-#The port that application present rest api on
 rest_api_port=":8080"
-#The port that application dubuging port listen on
+#stack trace debuging port
 debug_port=":6060"
 
 #Zookeeper connection configuration for datastore and notification center usage
@@ -58,6 +57,8 @@ ping_interval=2
 rate_limit=123123 #Send message/sec
 ```
 
+>To use component connection you must be define component port for ejabberd servers
+
 Rest APIs
 ---------
 |URI|type|Description|
@@ -81,8 +82,11 @@ Samples
 
 In order to send a message to all online users you need to set channel_id **negative number**.
 
+connection handling
+-------------------
+If this service lost it's connection to any service that connect to; it will be connect
 
 Debugging
 ---------
-Call `http://localhost:<debug_port>/debug/pprof/trace?seconds=5` to got 5 second of application trace file and then you can see application trace with
-`go tool trace <DOWNLOADED_FILE_PATH>`
+Call `http://localhost:<debug_port>/debug/pprof/trace?seconds=5` to get 5 second of application trace file and then you can see application trace. With
+`go tool trace <DOWNLOADED_FILE_PATH>` command you can see what's happen in application on that period of time

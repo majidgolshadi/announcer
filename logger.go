@@ -1,12 +1,12 @@
 package client_announcer
 
 import (
-	"os"
 	log "github.com/sirupsen/logrus"
+	"os"
 )
 
 func init() {
+	f, _ := os.Create("announcer.log")
 	log.SetFormatter(&log.TextFormatter{})
-	log.SetOutput(os.Stdout)
+	log.SetOutput(f)
 }
-

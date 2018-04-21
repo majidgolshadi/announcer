@@ -23,16 +23,15 @@ check_interval=2 #Second
 [ejabberd]
 cluster_nodes="192.168.95.180:5222,192.168.95.181:5222"
 default_cluster="A"
+rate_limit=4550 #msg/sec
 
 [client]
 username="6"
 password="6"
 domain="soroush.ir"
 ping_interval=2 #Second
-rate_limit=4550 #msg/sec
 
 [component]
 name="announcer"
 secret="announcer"
 ping_interval=2 #Second
-rate_limit=4550 #msg/sec

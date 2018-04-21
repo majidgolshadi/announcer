@@ -9,76 +9,48 @@ import (
 )
 
 type Cluster struct {
-	Client      *Client
-	Component   *Component
-	connections []Sender
+	Status      bool
+	Client      ClientSender
+	Component   ComponentSender
+	connections map[string]Sender
 	Addresses   []string
 	RateLimit   int
 }
 
-type Client struct {
-	Username     string
-	Password     string
-	Domain       string
-	PingInterval int
-}
-
-type Component struct {
-	Name         string
-	Secret       string
-	PingInterval int
-}
-
-func ClusterClientFactory(nodeAddresses []string, username string, password string, domain string, pingIntervalDuration int, rateLimit int) (*Cluster, error) {
-	cluster := &Cluster{
-		Addresses: nodeAddresses,
-		RateLimit: rateLimit,
-		Client: &Client{
-			Username:     username,
-			Password:     password,
-			Domain:       domain,
-			PingInterval: pingIntervalDuration,
-		},
-	}
-
-	for _, nodeAdd := range cluster.Addresses {
-		conn := &ClientSender{}
-		if err := conn.Connect(nodeAdd, username, password, domain, time.Duration(cluster.Client.PingInterval)*time.Second); err != nil {
-			return nil, err
+func (cluster *Cluster) Connect() error {
+	cluster.connections = make(map[string]Sender)
+	for _, nodeAddr := range cluster.Addresses {
+		sender := cluster.createSender()
+		if err := sender.Connect(nodeAddr); err == nil {
+			cluster.connections[nodeAddr] = sender
 		}
-
-		cluster.connections = append(cluster.connections, conn)
 	}
 
-	return cluster, nil
+	cluster.Status = true
+	return nil
 }
 
-func ClusterComponentFactory(nodeAddresses []string, name string, secret string, pingIntervalDuration int, rateLimit int) (*Cluster, error) {
-	cluster := &Cluster{
-		Addresses: nodeAddresses,
-		RateLimit: rateLimit,
-		Component: &Component{
-			Name:         name,
-			Secret:       secret,
-			PingInterval: pingIntervalDuration,
-		},
-	}
-
-	for _, nodeAdd := range cluster.Addresses {
-		conn := &ComponentSender{}
-		if err := conn.Connect(nodeAdd, name, secret, time.Duration(cluster.Component.PingInterval)*time.Second); err != nil {
-			return nil, err
+func (cluster *Cluster) createSender() Sender {
+	if cluster.Client.Password != "" {
+		return &ClientSender{
+			Username:     cluster.Client.Username,
+			Password:     cluster.Client.Password,
+			Domain:       cluster.Client.Domain,
+			PingInterval: cluster.Client.PingInterval,
 		}
-
-		cluster.connections = append(cluster.connections, conn)
 	}
 
-	return cluster, nil
+	return &ComponentSender{
+		Name:         cluster.Component.Name,
+		Secret:       cluster.Component.Secret,
+		PingInterval: cluster.Component.PingInterval,
+	}
 }
 
-func (cluster *Cluster) SendToUsers(msgTemplate string, users []string) {
+func (cluster *Cluster) SendToUsers(msgTemplate string, users []string) error {
 	sleepTime := time.Second / time.Duration(cluster.RateLimit)
 
+	// For more that 1000000000 sleep time is zero
 	if sleepTime == 0 {
 		sleepTime = 1
 	}
@@ -87,30 +59,41 @@ func (cluster *Cluster) SendToUsers(msgTemplate string, users []string) {
 
 	for _, user := range users {
 		<-ticker.C
+		if cluster.Status {
 
-		go func() {
-			msg := fmt.Sprintf(msgTemplate, user)
-			if err := cluster.send(msg); err != nil {
-				log.WithFields(log.Fields{
-					"error": err.Error(),
-					"user": user,
-					"message": msg}).Error("can't send message")
-			}
-		}()
+			go func() {
+				msg := fmt.Sprintf(msgTemplate, user)
+				if err := cluster.send(msg); err != nil {
+					log.WithFields(log.Fields{
+						"error":   err.Error(),
+						"user":    user,
+						"message": msg}).Error("can't send message")
+				}
+			}()
+
+		}
 	}
 
 	ticker.Stop()
+	return nil
 }
 
 func (cluster *Cluster) send(msg string) error {
 	var err error
-	for index, conn := range cluster.connections {
+	for key, conn := range cluster.connections {
 		if err = conn.Send(msg); err == nil {
 			return nil
 		}
 
-		log.Error("send message to server ", cluster.Addresses[index], " failed")
+		delete(cluster.connections, key)
 	}
+
+	go func() {
+		if len(cluster.connections) < 1 {
+			cluster.Status = false
+			cluster.Connect()
+		}
+	}()
 
 	return err
 }

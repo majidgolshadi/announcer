@@ -7,12 +7,17 @@ import (
 )
 
 type ClientSender struct {
+	Username     string
+	Password     string
+	Domain       string
+	PingInterval int
+
 	keepConnectionAliveTicker *time.Ticker
 	connection                *xmpp.Conn
 }
 
-func (n *ClientSender) Connect(address string, username string, password string, domain string, duration time.Duration) (err error) {
-	n.connection, err = xmpp.Dial(address, username, domain, "announcer", password, &xmpp.Config{
+func (cs *ClientSender) Connect(host string) (err error) {
+	cs.connection, err = xmpp.Dial(host, cs.Username, cs.Domain, "announcer", cs.Password, &xmpp.Config{
 		SkipTLS:   true,
 		TLSConfig: &tls.Config{},
 	})
@@ -21,7 +26,7 @@ func (n *ClientSender) Connect(address string, username string, password string,
 		return err
 	}
 
-	n.keepConnectionAlive(duration)
+	cs.keepConnectionAlive(time.Duration(cs.PingInterval) * time.Second)
 	return
 }
 

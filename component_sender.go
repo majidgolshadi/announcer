@@ -2,21 +2,29 @@ package client_announcer
 
 import (
 	"github.com/sheenobu/go-xco"
-	"time"
 	"log"
+	"time"
 )
 
 type ComponentSender struct {
+	Name         string
+	Secret       string
+	PingInterval int
+
 	connection                *xco.Component
 	keepConnectionAliveTicker *time.Ticker
 }
 
-func (cs *ComponentSender) Connect(address string, name string, secret string, duration time.Duration) (err error) {
+func (cs *ComponentSender) Connect(address string) (err error) {
 	cs.connection, err = xco.NewComponent(xco.Options{
-		Name:         name,
-		SharedSecret: secret,
+		Name:         cs.Name,
+		SharedSecret: cs.Secret,
 		Address:      address,
 	})
+
+	if err != nil {
+		return err
+	}
 
 	go func() {
 		if err := cs.connection.Run(); err != nil {
@@ -24,9 +32,8 @@ func (cs *ComponentSender) Connect(address string, name string, secret string, d
 		}
 	}()
 
-	cs.keepConnectionAlive(duration)
-
-	return err
+	cs.keepConnectionAlive(time.Duration(cs.PingInterval) * time.Second)
+	return nil
 }
 
 func (cs *ComponentSender) keepConnectionAlive(duration time.Duration) {
