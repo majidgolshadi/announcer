@@ -25,7 +25,7 @@ type config struct {
 type Ejabberd struct {
 	ClusterNodes   string `toml:"cluster_nodes"`
 	DefaultCluster string `toml:"default_cluster"`
-	RateLimit    int    `toml:"rate_limit"`
+	RateLimit      int    `toml:"rate_limit"`
 }
 
 type Client struct {
@@ -50,6 +50,7 @@ type Redis struct {
 	ClusterNodes  string `toml:"cluster_nodes"`
 	Password      string `toml:"password"`
 	DB            int    `toml:"db"`
+	HashTable     string `toml:"hash_table"`
 	CheckInterval int    `toml:"check_interval"`
 }
 
@@ -106,7 +107,7 @@ func main() {
 		cluster.Client.PingInterval = cnf.Client.PingInterval
 	}
 
-	if err = cluster.Connect();err != nil {
+	if err = cluster.Connect(); err != nil {
 		log.Fatal("erjaberd create connection error ", err.Error())
 		return
 	}
@@ -119,7 +120,7 @@ func main() {
 
 	onlineUserInquiry, _ := client_announcer.OnlineUserInquiryFactory(
 		cnf.Mysql.Address, cnf.Mysql.Username, cnf.Mysql.Password, cnf.Mysql.DB,
-		cnf.Redis.ClusterNodes, cnf.Redis.Password, cnf.Redis.DB, cnf.Redis.CheckInterval)
+		cnf.Redis.ClusterNodes, cnf.Redis.Password, cnf.Redis.DB, cnf.Redis.HashTable, cnf.Redis.CheckInterval)
 
 	defer onlineUserInquiry.Close()
 	client_announcer.RunHttpServer(cnf.HttpPort, onlineUserInquiry, chatConnRepo)

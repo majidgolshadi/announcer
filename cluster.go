@@ -86,6 +86,7 @@ func (cluster *Cluster) send(msg string) error {
 		}
 
 		delete(cluster.connections, key)
+		log.Warn("connection to chat server", key, " lost")
 	}
 
 	go func() {
