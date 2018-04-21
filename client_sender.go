@@ -30,19 +30,19 @@ func (cs *ClientSender) Connect(host string) (err error) {
 	return
 }
 
-func (n *ClientSender) keepConnectionAlive(duration time.Duration) {
-	n.keepConnectionAliveTicker = time.NewTicker(duration)
+func (cs *ClientSender) keepConnectionAlive(duration time.Duration) {
+	cs.keepConnectionAliveTicker = time.NewTicker(duration)
 	go func() {
-		for range n.keepConnectionAliveTicker.C {
-			n.connection.Ping()
+		for range cs.keepConnectionAliveTicker.C {
+			cs.connection.Ping()
 		}
 	}()
 }
 
-func (n *ClientSender) Send(msg string) error {
-	return n.connection.SendCustomMsg(msg)
+func (cs *ClientSender) Send(msg string) error {
+	return cs.connection.SendCustomMsg(msg)
 }
 
-func (n *ClientSender) Close() {
-	n.keepConnectionAliveTicker.Stop()
+func (cs *ClientSender) Close() {
+	cs.keepConnectionAliveTicker.Stop()
 }

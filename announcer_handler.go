@@ -28,6 +28,8 @@ func AnnounceHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"status": err.Error()})
 	}
 
-	cluster.SendToUsers(input.Message, users)
+	if err := cluster.SendToUsers(input.Message, users); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"status": err.Error()})
+	}
 	c.JSON(http.StatusOK, gin.H{"status": "OK"})
 }
