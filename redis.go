@@ -53,8 +53,8 @@ func (r *Redis) connect() {
 
 func (r *Redis) usernameExists(username string) bool {
 	if r.connectionStatus {
-		result, _, _ := r.connection.Scan(1, username+"/*", 1).Result()
-		return len(result) > 0
+		result, _ := r.connection.HLen(username).Result()
+		return result > 0
 	}
 
 	return true

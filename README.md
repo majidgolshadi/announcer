@@ -40,6 +40,7 @@ check_interval=2
 [ejabberd]
 cluster_nodes="192.168.95.180:5222"
 default_cluster="A"
+rate_limit=123123 #Send message/sec
 
 #Every cluster can ONLY has Client or Component connection
 #Please attention to use only one of them
@@ -48,13 +49,11 @@ username="4"
 password="4"
 domain="soroush.ir"
 ping_interval=2
-rate_limit=123123 #Send message/sec
 
 [component]
 name="announcer"
 secret="announcer"
 ping_interval=2
-rate_limit=123123 #Send message/sec
 ```
 
 >To use component connection you must be define component port for ejabberd servers
