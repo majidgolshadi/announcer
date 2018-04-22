@@ -34,12 +34,14 @@ type Ejabberd struct {
 	ClusterNodes   string `toml:"cluster_nodes"`
 	DefaultCluster string `toml:"default_cluster"`
 	RateLimit      int    `toml:"rate_limit"`
+	SendRetry      int    `toml:"send_retry"`
 }
 
 type Client struct {
 	Username     string `toml:"username"`
 	Password     string `toml:"password"`
 	Domain       string `toml:"domain"`
+	Resource     string `toml:"resource"`
 	PingInterval int    `toml:"ping_interval"`
 }
 
@@ -105,6 +107,7 @@ func main() {
 	cluster = &client_announcer.Cluster{
 		Addresses: strings.Split(cnf.Ejabberd.ClusterNodes, ","),
 		RateLimit: cnf.Ejabberd.RateLimit,
+		SendRetry: cnf.Ejabberd.SendRetry,
 	}
 
 	if cnf.Component.Secret != "" {
@@ -117,6 +120,7 @@ func main() {
 		cluster.Client.Username = cnf.Client.Username
 		cluster.Client.Password = cnf.Client.Password
 		cluster.Client.Domain = cnf.Client.Domain
+		cluster.Client.Resource = cnf.Client.Resource
 		cluster.Client.PingInterval = cnf.Client.PingInterval
 	}
 

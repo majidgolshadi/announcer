@@ -4,7 +4,7 @@ debug_port=":6060"
 [log]
 format="json" #json/text (default:text)
 log_level="info" #info/error/warning (default:warning)
-log_poing="/path/to/log/file" #optional
+log_point="/path/to/log/file" #optional
 
 #Optional
 [zookeeper]
@@ -21,6 +21,7 @@ db="test"
 cluster_nodes="127.0.0.1:6379"
 password=""
 db=0
+hash_table="UserPresence"
 check_interval=2 #Second
 
 #For component define ejabberd port 8889
@@ -29,6 +30,7 @@ check_interval=2 #Second
 cluster_nodes="192.168.95.180:5222,192.168.95.181:5222"
 default_cluster="A"
 rate_limit=4550 #msg/sec
+send_retry=6
 
 [client]
 username="6"

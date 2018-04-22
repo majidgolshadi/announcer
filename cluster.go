@@ -9,12 +9,14 @@ import (
 )
 
 type Cluster struct {
-	Status      bool
 	Client      ClientSender
 	Component   ComponentSender
 	connections map[string]Sender
+	domain      string
 	Addresses   []string
 	RateLimit   int
+	SendRetry   int
+	ticker      *time.Ticker
 }
 
 func (cluster *Cluster) Connect() error {
@@ -26,20 +28,29 @@ func (cluster *Cluster) Connect() error {
 		}
 	}
 
-	cluster.Status = true
+	sleepTime := time.Second / time.Duration(cluster.RateLimit)
+	// For more that 1000000000 sleep time is zero
+	if sleepTime == 0 {
+		sleepTime = 1
+	}
+
+	cluster.ticker = time.NewTicker(sleepTime)
 	return nil
 }
 
 func (cluster *Cluster) createSender() Sender {
 	if cluster.Client.Password != "" {
+		cluster.domain = cluster.Client.Domain
 		return &ClientSender{
 			Username:     cluster.Client.Username,
 			Password:     cluster.Client.Password,
 			Domain:       cluster.Client.Domain,
+			Resource:     cluster.Client.Resource,
 			PingInterval: cluster.Client.PingInterval,
 		}
 	}
 
+	cluster.domain = cluster.Component.Domain
 	return &ComponentSender{
 		Name:         cluster.Component.Name,
 		Secret:       cluster.Component.Secret,
@@ -49,33 +60,22 @@ func (cluster *Cluster) createSender() Sender {
 }
 
 func (cluster *Cluster) SendToUsers(msgTemplate string, users []string) error {
-	sleepTime := time.Second / time.Duration(cluster.RateLimit)
-
-	// For more that 1000000000 sleep time is zero
-	if sleepTime == 0 {
-		sleepTime = 1
-	}
-
-	ticker := time.NewTicker(sleepTime)
-
 	for _, user := range users {
-		<-ticker.C
-		if cluster.Status {
-
-			go func() {
-				msg := fmt.Sprintf(msgTemplate, user)
-				if err := cluster.send(msg); err != nil {
-					log.WithFields(log.Fields{
-						"error":   err.Error(),
-						"user":    user,
-						"message": msg}).Error("can't send message")
+		<-cluster.ticker.C
+		msg := fmt.Sprintf(msgTemplate, fmt.Sprintf("%s@%s", user, cluster.domain))
+		go func() {
+			for i := 1; i < cluster.SendRetry; i++ {
+				if err := cluster.send(msg); err == nil {
+					log.Info(msg, " sent")
+					return
 				}
-			}()
-
-		}
+				timer := time.NewTimer(time.Duration(i) * time.Second)
+				log.WithField("message", msg).Error("retry to send message")
+				<-timer.C
+			}
+		}()
 	}
 
-	ticker.Stop()
 	return nil
 }
 
@@ -91,9 +91,9 @@ func (cluster *Cluster) send(msg string) error {
 		delete(cluster.connections, key)
 	}
 
+	cluster.ticker.Stop()
 	go func() {
 		if len(cluster.connections) < 1 {
-			cluster.Status = false
 			cluster.Connect()
 		}
 	}()
@@ -107,6 +107,7 @@ func (cluster *Cluster) toJson() (result []byte) {
 }
 
 func (cluster *Cluster) Close() {
+	log.Info("close cluster connection ", cluster.Addresses)
 	for _, conn := range cluster.connections {
 		conn.Close()
 	}

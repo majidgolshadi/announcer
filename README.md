@@ -17,7 +17,7 @@ debug_port=":6060" #stack trace debuging port
 [log]
 format="json" #json/text (default:text)
 log_level="info" #info/error/warning (default:warning)
-log_poing="/path/to/log/file" #optional
+log_point="/path/to/log/file" #optional
 
 
 #Zookeeper connection configuration for datastore and notification center purpose
@@ -40,12 +40,14 @@ password=""
 db=0
 #Time in second duration that connection with redis will be check and if lost try to connect
 #In this period of time every users known as online users
-check_interval=2
+check_interval=2 #Second
+hash_table="UserPresence" #hash table that online users store in
 
 [ejabberd]
 cluster_nodes="192.168.95.180:5222"
 default_cluster="A"
 rate_limit=123123 #Send message/sec
+send_retry=6 #retry number to send a message if sent failed
 
 #Each cluster can ONLY has Client or Component connection
 #Please attention to use only one of them

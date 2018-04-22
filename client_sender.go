@@ -13,6 +13,7 @@ type ClientSender struct {
 	Username     string
 	Password     string
 	Domain       string
+	Resource     string
 	PingInterval int
 
 	clientName                string
@@ -26,7 +27,8 @@ func (cs *ClientSender) Connect(host string) (err error) {
 	cs.connectedToHost = host
 
 	log.Info("connect client ", cs.clientName, " to ", host)
-	cs.connection, err = xmpp.Dial(host, cs.Username, cs.Domain, "announcer", cs.Password, &xmpp.Config{
+	resource := fmt.Sprintf("%s-%s", cs.Resource, host)
+	cs.connection, err = xmpp.Dial(host, cs.Username, cs.Domain, resource, cs.Password, &xmpp.Config{
 		SkipTLS:   true,
 		TLSConfig: &tls.Config{},
 	})
