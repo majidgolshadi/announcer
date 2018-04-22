@@ -12,16 +12,21 @@ Configuration
 -------------
 ```toml
 rest_api_port=":8080"
-#stack trace debuging port
-debug_port=":6060"
+debug_port=":6060" #stack trace debuging port
 
-#Zookeeper connection configuration for datastore and notification center usage
+[log]
+format="json" #json/text (default:text)
+log_level="info" #info/error/warning (default:warning)
+log_poing="/path/to/log/file" #optional
+
+
+#Zookeeper connection configuration for datastore and notification center purpose
 ####this configuration is optional###
 [zookeeper]
 cluster_nodes="192.168.95.171:2181"
 namespace="/watch" #Znode which data will be saved under
 
-#Mysql connection configuration which contain ws_channel_member table
+#Mysql database connection configuration which contain ws_channel_member table
 [mysql]
 address="127.0.0.1:3306"
 username="root"
@@ -42,7 +47,7 @@ cluster_nodes="192.168.95.180:5222"
 default_cluster="A"
 rate_limit=123123 #Send message/sec
 
-#Every cluster can ONLY has Client or Component connection
+#Each cluster can ONLY has Client or Component connection
 #Please attention to use only one of them
 [client]
 username="4"
@@ -53,6 +58,7 @@ ping_interval=2
 [component]
 name="announcer"
 secret="announcer"
+domain="soroush.ir"
 ping_interval=2
 ```
 

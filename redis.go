@@ -53,8 +53,8 @@ func (r *Redis) connect() {
 
 func (r *Redis) usernameExists(username string) bool {
 	if r.connectionStatus {
-		result, _ := r.connection.HLen(username).Result()
-		return result > 0
+		result, _ := r.connection.HGet(r.HashTable, username).Result()
+		return result != ""
 	}
 
 	return true
@@ -65,5 +65,6 @@ func (r *Redis) getAllUsers() ([]string, error) {
 }
 
 func (r *Redis) close() {
+	log.Info("close redis connections to ", r.Address)
 	r.connection.Close()
 }

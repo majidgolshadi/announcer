@@ -23,7 +23,7 @@ func OnlineUserInquiryFactory(mysqlAddress string, mysqlUsername string, mysqlPa
 		Address:       redisAddr,
 		Password:      redisPassword,
 		Database:      redisDb,
-		HashTable:     redisPassword,
+		HashTable:     redisHashTable,
 		CheckInterval: redisCheckInterval,
 	}
 	ouq.redisConn.connect()
@@ -57,9 +57,7 @@ func (ouq *onlineUserInquiry) GetOnlineUsers(channel int) ([]string, error) {
 }
 
 func (ouq *onlineUserInquiry) Close() {
+	log.Info("close online user inquiry connections")
 	ouq.mysqlConn.close()
-	log.Info("connection to mysql ", ouq.mysqlConn.address, " closed")
-
 	ouq.redisConn.close()
-	log.Info("connection to redis ", ouq.redisConn.Address, " closed")
 }

@@ -39,4 +39,5 @@ ping_interval=2 #Second
 [component]
 name="announcer"
 secret="announcer"
+domain="soroush.ir"
 ping_interval=2 #Second

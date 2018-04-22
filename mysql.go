@@ -1,9 +1,10 @@
 package client_announcer
 
 import (
-	"database/sql"
 	"fmt"
+	"database/sql"
 	_ "github.com/go-sql-driver/mysql"
+	log "github.com/sirupsen/logrus"
 )
 
 type Mysql struct {
@@ -43,5 +44,6 @@ func (ms *Mysql) getChannelUsers(channelId int) (*sql.Rows, error) {
 }
 
 func (ms *Mysql) close() {
+	log.Info("close mysql connections to ", ms.address)
 	ms.connection.Close()
 }
