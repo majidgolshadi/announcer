@@ -83,7 +83,20 @@ In order to send a message to all online users you need to set channel_id **nega
 
 connection handling
 -------------------
-If this service lost it's connection to any service that connect to; it will be connect
+**Redis**
+Connection to redis server will be check every "check_interval" second.
+If we lost our connection we will discard fetch data from that till connection establish again
+
+**Ejabberd Component**
+Based on component "ping_interval" configuration; send ping to end server every "ping_interval" second
+
+**Ejabberd Client**
+Based on component "ping_interval" configuration; send ping to end server every "ping_interval" second
+
+**Ejabberd connections**
+On send time we check that if they are available or not
+if lost a connection we will remove that form available connection and when connection numbers goes to 0
+we try to connect to all ejabberd nodes again
 
 Debugging
 ---------

@@ -1,7 +1,7 @@
 package client_announcer
 
 import (
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 type onlineUserInquiry struct {
@@ -10,7 +10,7 @@ type onlineUserInquiry struct {
 }
 
 func OnlineUserInquiryFactory(mysqlAddress string, mysqlUsername string, mysqlPassword string, mysqlDatabase string,
-	redisAddr string, redisPassword string, redisDb int, hashTable string, redisCheckInterval int) (ouq *onlineUserInquiry, err error) {
+	redisAddr string, redisPassword string, redisDb int, redisHashTable string, redisCheckInterval int) (ouq *onlineUserInquiry, err error) {
 
 	ouq = &onlineUserInquiry{}
 	ouq.mysqlConn, err = mysqlClientFactory(mysqlAddress, mysqlUsername, mysqlPassword, mysqlDatabase)
@@ -19,7 +19,15 @@ func OnlineUserInquiryFactory(mysqlAddress string, mysqlUsername string, mysqlPa
 		return nil, err
 	}
 
-	ouq.redisConn = redisClientFactory(redisAddr, redisPassword, redisDb, hashTable, redisCheckInterval)
+	ouq.redisConn = &Redis{
+		Address:       redisAddr,
+		Password:      redisPassword,
+		Database:      redisDb,
+		HashTable:     redisPassword,
+		CheckInterval: redisCheckInterval,
+	}
+	ouq.redisConn.connect()
+
 	return ouq, nil
 }
 

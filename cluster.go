@@ -44,6 +44,7 @@ func (cluster *Cluster) createSender() Sender {
 		Name:         cluster.Component.Name,
 		Secret:       cluster.Component.Secret,
 		PingInterval: cluster.Component.PingInterval,
+		Domain:       cluster.Component.Domain,
 	}
 }
 
@@ -85,8 +86,9 @@ func (cluster *Cluster) send(msg string) error {
 			return nil
 		}
 
-		delete(cluster.connections, key)
 		log.Warn("connection to chat server", key, " lost")
+		conn.Close()
+		delete(cluster.connections, key)
 	}
 
 	go func() {

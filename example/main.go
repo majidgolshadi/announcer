@@ -3,6 +3,7 @@ package main
 import (
 	"net/http"
 	_ "net/http/pprof"
+	"os"
 	"strings"
 
 	"github.com/BurntSushi/toml"
@@ -14,12 +15,19 @@ type config struct {
 	HttpPort  string `toml:"rest_api_port"`
 	DebugPort string `toml:"debug_port"`
 
+	Log       Log
 	Ejabberd  Ejabberd
 	Client    Client
 	Component Component
 	Zookeeper Zookeeper
 	Mysql     Mysql
 	Redis     Redis
+}
+
+type Log struct {
+	format   string `toml:"format"`
+	LogLevel string `toml:"log_level"`
+	LogPoint string `toml:"log_point"`
 }
 
 type Ejabberd struct {
@@ -38,6 +46,7 @@ type Client struct {
 type Component struct {
 	Name         string `toml:"name"`
 	Secret       string `toml:"secret"`
+	Domain       string `toml:"domain"`
 	PingInterval int    `toml:"ping_interval"`
 }
 
@@ -73,7 +82,10 @@ func main() {
 		log.Fatal("read configuration file error ", err.Error())
 	}
 
+	initLogService(cnf.Log)
+
 	go func() {
+		log.Info("debugging server listening on port ", cnf.DebugPort)
 		log.Println(http.ListenAndServe(cnf.DebugPort, nil))
 	}()
 
@@ -99,6 +111,7 @@ func main() {
 		cluster.Component.Name = cnf.Component.Name
 		cluster.Component.Secret = cnf.Component.Secret
 		cluster.Component.PingInterval = cnf.Component.PingInterval
+		cluster.Component.Domain = cnf.Component.Domain
 
 	} else if cnf.Client.Password != "" {
 		cluster.Client.Username = cnf.Client.Username
@@ -123,5 +136,30 @@ func main() {
 		cnf.Redis.ClusterNodes, cnf.Redis.Password, cnf.Redis.DB, cnf.Redis.HashTable, cnf.Redis.CheckInterval)
 
 	defer onlineUserInquiry.Close()
-	client_announcer.RunHttpServer(cnf.HttpPort, onlineUserInquiry, chatConnRepo)
+	log.Println(client_announcer.RunHttpServer(cnf.HttpPort, onlineUserInquiry, chatConnRepo))
+}
+
+// TODO: Add tag for any application log
+func initLogService(logConfig Log) {
+	switch logConfig.LogLevel {
+	case "info":
+		log.SetLevel(log.InfoLevel)
+	case "error":
+		log.SetLevel(log.ErrorLevel)
+	default:
+		log.SetLevel(log.WarnLevel)
+	}
+
+	if logConfig.format == "json" {
+		log.SetFormatter(&log.JSONFormatter{})
+	}
+
+	if logConfig.LogPoint != "" {
+		f, err := os.Create(logConfig.LogPoint)
+		if err != nil {
+			log.Fatal("create log file error: ", err.Error())
+		}
+
+		log.SetOutput(f)
+	}
 }

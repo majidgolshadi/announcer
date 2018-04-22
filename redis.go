@@ -12,27 +12,18 @@ type Redis struct {
 	Password string
 	Database int
 
-	hashTable                 string
+	HashTable                 string
+	CheckInterval             int
 	connection                *redis.Client
 	connectionStatus          bool
 	keepConnectionAliveTicker *time.Ticker
 }
 
-func redisClientFactory(address string, password string, db int, hashTable string, checkInternal int) *Redis {
-	r := &Redis{}
-	r.connection = redis.NewClient(&redis.Options{
-		Addr:     address,
-		Password: password,
-		DB:       db,
-	})
-
-	r.hashTable = hashTable
-	r.keepConnectionAlive(time.Duration(checkInternal) * time.Second)
-
-	return r
-}
-
 func (r *Redis) keepConnectionAlive(duration time.Duration) {
+	if r.keepConnectionAliveTicker != nil {
+		r.keepConnectionAliveTicker.Stop()
+	}
+
 	r.keepConnectionAliveTicker = time.NewTicker(duration)
 	go func() {
 		for range r.keepConnectionAliveTicker.C {
@@ -55,6 +46,9 @@ func (r *Redis) connect() {
 		Password: r.Password,
 		DB:       r.Database,
 	})
+
+	r.keepConnectionAlive(time.Duration(r.CheckInterval) * time.Second)
+	r.connectionStatus = true
 }
 
 func (r *Redis) usernameExists(username string) bool {
@@ -67,7 +61,7 @@ func (r *Redis) usernameExists(username string) bool {
 }
 
 func (r *Redis) getAllUsers() ([]string, error) {
-	return r.connection.HKeys(r.hashTable).Result()
+	return r.connection.HKeys(r.HashTable).Result()
 }
 
 func (r *Redis) close() {

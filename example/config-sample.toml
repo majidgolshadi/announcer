@@ -1,6 +1,11 @@
 rest_api_port=":8080"
 debug_port=":6060"
 
+[log]
+format="json" #json/text (default:text)
+log_level="info" #info/error/warning (default:warning)
+log_poing="/path/to/log/file" #optional
+
 #Optional
 [zookeeper]
 cluster_nodes="192.168.95.171:2181"
