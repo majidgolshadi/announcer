@@ -124,7 +124,7 @@ func main() {
 		cluster.Client.PingInterval = cnf.Client.PingInterval
 	}
 
-	if err = cluster.Connect(); err != nil {
+	if err = cluster.Run(); err != nil {
 		log.Fatal("erjaberd create connection error ", err.Error())
 		return
 	}

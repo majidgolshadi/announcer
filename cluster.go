@@ -6,6 +6,7 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
+	"sync"
 )
 
 type Cluster struct {
@@ -17,9 +18,26 @@ type Cluster struct {
 	RateLimit   int
 	SendRetry   int
 	ticker      *time.Ticker
+	connectionMutex *sync.Mutex
 }
 
-func (cluster *Cluster) Connect() error {
+func (cluster *Cluster) Run() error {
+	cluster.connectionMutex = &sync.Mutex{}
+	cluster.initRateLimitTicker()
+	return cluster.connect()
+}
+
+func (cluster *Cluster) initRateLimitTicker() {
+	sleepTime := time.Second / time.Duration(cluster.RateLimit)
+	// For more that 1000000000 sleep time is zero
+	if sleepTime == 0 {
+		sleepTime = 1
+	}
+
+	cluster.ticker = time.NewTicker(sleepTime)
+}
+
+func (cluster *Cluster) connect() error {
 	cluster.connections = make(map[string]Sender)
 	for _, nodeAddr := range cluster.Addresses {
 		sender := cluster.createSender()
@@ -28,13 +46,6 @@ func (cluster *Cluster) Connect() error {
 		}
 	}
 
-	sleepTime := time.Second / time.Duration(cluster.RateLimit)
-	// For more that 1000000000 sleep time is zero
-	if sleepTime == 0 {
-		sleepTime = 1
-	}
-
-	cluster.ticker = time.NewTicker(sleepTime)
 	return nil
 }
 
@@ -91,12 +102,11 @@ func (cluster *Cluster) send(msg string) error {
 		delete(cluster.connections, key)
 	}
 
-	cluster.ticker.Stop()
-	go func() {
-		if len(cluster.connections) < 1 {
-			cluster.Connect()
-		}
-	}()
+	cluster.connectionMutex.Lock()
+	if len(cluster.connections) < 1 {
+		cluster.connect()
+	}
+	cluster.connectionMutex.Unlock()
 
 	return err
 }
@@ -108,6 +118,7 @@ func (cluster *Cluster) toJson() (result []byte) {
 
 func (cluster *Cluster) Close() {
 	log.Info("close cluster connection ", cluster.Addresses)
+	cluster.ticker.Stop()
 	for _, conn := range cluster.connections {
 		conn.Close()
 	}

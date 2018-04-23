@@ -27,8 +27,7 @@ func (cs *ClientSender) Connect(host string) (err error) {
 	cs.connectedToHost = host
 
 	log.Info("connect client ", cs.clientName, " to ", host)
-	resource := fmt.Sprintf("%s-%s", cs.Resource, host)
-	cs.connection, err = xmpp.Dial(host, cs.Username, cs.Domain, resource, cs.Password, &xmpp.Config{
+	cs.connection, err = xmpp.Dial(host, cs.Username, cs.Domain, cs.clientResource(host), cs.Password, &xmpp.Config{
 		SkipTLS:   true,
 		TLSConfig: &tls.Config{},
 	})
@@ -39,6 +38,10 @@ func (cs *ClientSender) Connect(host string) (err error) {
 
 	cs.keepConnectionAlive(time.Duration(cs.PingInterval) * time.Second)
 	return
+}
+
+func (cs *ClientSender) clientResource(uniqueKey string) string{
+	return fmt.Sprintf("%s-%s", cs.Resource, uniqueKey)
 }
 
 func (cs *ClientSender) keepConnectionAlive(duration time.Duration) {

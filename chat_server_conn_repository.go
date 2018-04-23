@@ -103,7 +103,7 @@ func (r *ChatServerClusterRepository) restoreCluster(clusterData []byte) (*Clust
 		return nil, err
 	}
 
-	return clusterTmp, clusterTmp.Connect()
+	return clusterTmp, clusterTmp.Run()
 }
 
 func (r *ChatServerClusterRepository) Close() {

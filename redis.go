@@ -55,7 +55,7 @@ func (r *Redis) usernameExists(username string) bool {
 	if r.connectionStatus {
 		result, _ := r.connection.HGet(r.HashTable, username).Result()
 		//return result != ""
-		println(result)
+		println("redis result",result)
 		return true
 	}
 
