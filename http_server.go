@@ -15,7 +15,8 @@ func RunHttpServer(port string, inquiry *onlineUserInquiry, repository *ChatServ
 	router := gin.Default()
 	v1 := router.Group("/v1")
 	{
-		v1.POST("/announce", AnnounceHandler)
+		v1.POST("/announce/channel", AnnounceChannelHandler)
+		v1.POST("/announce/user", AnnounceUserHandler)
 	}
 
 	return router.Run(port)

@@ -70,7 +70,8 @@ Rest APIs
 ---------
 |URI|type|Description|
 |---|----|-----------|
-|/v1/announce|POST|send channel message to that channel online members|
+|/v1/announce/channel|POST|send channel message to that channel online members|
+|/v1/announce/user|POST|send a message to user|
 
 Samples
 -------

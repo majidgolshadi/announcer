@@ -125,7 +125,7 @@ func main() {
 	}
 
 	if err = cluster.Run(); err != nil {
-		log.Fatal("erjaberd create connection error ", err.Error())
+		log.Fatal("erjaberd create connection error ", err)
 		return
 	}
 

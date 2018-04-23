@@ -56,6 +56,10 @@ func (ouq *onlineUserInquiry) GetOnlineUsers(channel int) ([]string, error) {
 	return onlineUsers, nil
 }
 
+func (ouq *onlineUserInquiry) IsOnline(username string) bool {
+	return ouq.redisConn.usernameExists(username)
+}
+
 func (ouq *onlineUserInquiry) Close() {
 	log.Info("close online user inquiry connections")
 	ouq.mysqlConn.close()

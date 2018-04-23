@@ -37,19 +37,21 @@ func (cluster *Cluster) initRateLimitTicker() {
 	cluster.ticker = time.NewTicker(sleepTime)
 }
 
-func (cluster *Cluster) connect() error {
+func (cluster *Cluster) connect() (err error) {
 	cluster.connections = make(map[string]Sender)
 	for _, nodeAddr := range cluster.Addresses {
-		sender := cluster.createSender()
-		if err := sender.Connect(nodeAddr); err == nil {
+		sender := cluster.createSenderInstance()
+		if err = sender.Connect(nodeAddr); err == nil {
 			cluster.connections[nodeAddr] = sender
+		} else {
+			log.WithField("error", err.Error()).Error("connecting to ", nodeAddr, " error")
 		}
 	}
 
-	return nil
+	return
 }
 
-func (cluster *Cluster) createSender() Sender {
+func (cluster *Cluster) createSenderInstance() Sender {
 	if cluster.Client.Password != "" {
 		cluster.domain = cluster.Client.Domain
 		return &ClientSender{
@@ -70,27 +72,32 @@ func (cluster *Cluster) createSender() Sender {
 	}
 }
 
-func (cluster *Cluster) SendToUsers(msgTemplate string, users []string) error {
+func (cluster *Cluster) SendToUsers(msgTemplate string, users []string) {
 	for _, user := range users {
 		<-cluster.ticker.C
-		msg := fmt.Sprintf(msgTemplate, fmt.Sprintf("%s@%s", user, cluster.domain))
-		go func() {
-			for i := 1; i < cluster.SendRetry; i++ {
-				if err := cluster.send(msg); err == nil {
-					log.Info(msg, " sent")
-					return
-				}
-				timer := time.NewTimer(time.Duration(i) * time.Second)
-				log.WithField("message", msg).Error("retry to send message")
-				<-timer.C
-			}
-		}()
+		cluster.SendToUser(msgTemplate, user)
 	}
-
-	return nil
 }
 
-func (cluster *Cluster) send(msg string) error {
+func (cluster *Cluster) SendToUser(msgTemplate string, user string) {
+	msg := fmt.Sprintf(msgTemplate, fmt.Sprintf("%s@%s", user, cluster.domain))
+	go func() {
+		cluster.sendWithRetry(msg)
+	}()
+}
+
+func (cluster *Cluster) sendWithRetry(msg string) {
+	for i := 1; i < cluster.SendRetry; i++ {
+		if err := cluster.sendMsg(msg); err == nil {
+			log.WithField("message", msg).Info("message sent")
+			return
+		}
+		log.WithField("message", msg).Warn("retry to send message after ", i, " second...")
+		time.Sleep(time.Second * time.Duration(i))
+	}
+}
+
+func (cluster *Cluster) sendMsg(msg string) error {
 	var err error
 	for key, conn := range cluster.connections {
 		if err = conn.Send(msg); err == nil {

@@ -5,14 +5,14 @@ import (
 	"net/http"
 )
 
-type announceRequest struct {
+type announceChannelRequest struct {
 	Cluster   string `json:"cluster"`
 	Message   string `json:"message" binding:"required"`
 	ChannelId int    `json:"channel_id" binding:"required"`
 }
 
-func AnnounceHandler(c *gin.Context) {
-	var input announceRequest
+func AnnounceChannelHandler(c *gin.Context) {
+	var input announceChannelRequest
 	if err := c.BindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"status": err.Error()})
 		return
@@ -28,8 +28,30 @@ func AnnounceHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"status": err.Error()})
 	}
 
-	if err := cluster.SendToUsers(input.Message, users); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"status": err.Error()})
+	cluster.SendToUsers(input.Message, users)
+	c.JSON(http.StatusOK, gin.H{"status": "OK"})
+}
+
+type announceUserRequest struct {
+	Cluster string `json:"cluster"`
+	Message string `json:"message" binding:"required"`
+	User    string `json:"message" binding:"required"`
+}
+
+func AnnounceUserHandler(c *gin.Context) {
+	var input announceUserRequest
+	if err := c.BindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": err.Error()})
+		return
+	}
+
+	if onlineUserInq.IsOnline(input.User) {
+		cluster, err := chatConnRepo.Get(input.Cluster)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"status": err.Error()})
+		}
+
+		cluster.SendToUser(input.Message, input.User)
 	}
 	c.JSON(http.StatusOK, gin.H{"status": "OK"})
 }
