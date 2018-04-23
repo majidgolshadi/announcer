@@ -25,7 +25,7 @@ type config struct {
 }
 
 type Log struct {
-	format   string `toml:"format"`
+	Format   string `toml:"format"`
 	LogLevel string `toml:"log_level"`
 	LogPoint string `toml:"log_point"`
 }
@@ -154,7 +154,7 @@ func initLogService(logConfig Log) {
 		log.SetLevel(log.WarnLevel)
 	}
 
-	if logConfig.format == "json" {
+	if logConfig.Format == "json" {
 		log.SetFormatter(&log.JSONFormatter{})
 	}
 

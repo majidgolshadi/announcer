@@ -10,14 +10,14 @@ import (
 )
 
 type Cluster struct {
-	Client      ClientSender
-	Component   ComponentSender
-	connections map[string]Sender
-	domain      string
-	Addresses   []string
-	RateLimit   int
-	SendRetry   int
-	ticker      *time.Ticker
+	Client          ClientSender
+	Component       ComponentSender
+	connections     map[string]Sender
+	domain          string
+	Addresses       []string
+	RateLimit       int
+	SendRetry       int
+	ticker          *time.Ticker
 	connectionMutex *sync.Mutex
 }
 

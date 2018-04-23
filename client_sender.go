@@ -40,7 +40,7 @@ func (cs *ClientSender) Connect(host string) (err error) {
 	return
 }
 
-func (cs *ClientSender) clientResource(uniqueKey string) string{
+func (cs *ClientSender) clientResource(uniqueKey string) string {
 	return fmt.Sprintf("%s-%s", cs.Resource, uniqueKey)
 }
 

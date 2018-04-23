@@ -2,8 +2,8 @@ package client_announcer
 
 import (
 	"fmt"
-	"time"
 	"math/rand"
+	"time"
 
 	"github.com/sheenobu/go-xco"
 	log "github.com/sirupsen/logrus"
