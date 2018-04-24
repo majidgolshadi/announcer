@@ -22,6 +22,10 @@ type ClientSender struct {
 	connection                *xmpp.Conn
 }
 
+// Every client with specific resource can only has one connection to ejabberd cluster so in order to have
+// multiple connection(single connection to every single node) we have to define different resources
+// We attached server ip to prefix resource that we get from configuration file
+// So for 3 server in single ejabberd cluster we only have 3 connection
 func (cs *ClientSender) Connect(host string) (err error) {
 	cs.clientName = fmt.Sprintf("%s@%s", cs.Username, cs.Domain)
 	cs.connectedToHost = host

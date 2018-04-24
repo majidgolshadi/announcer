@@ -35,7 +35,7 @@ func AnnounceChannelHandler(c *gin.Context) {
 type announceUserRequest struct {
 	Cluster string `json:"cluster"`
 	Message string `json:"message" binding:"required"`
-	User    string `json:"message" binding:"required"`
+	Username    string `json:"username" binding:"required"`
 }
 
 func AnnounceUserHandler(c *gin.Context) {
@@ -45,13 +45,11 @@ func AnnounceUserHandler(c *gin.Context) {
 		return
 	}
 
-	if onlineUserInq.IsOnline(input.User) {
-		cluster, err := chatConnRepo.Get(input.Cluster)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"status": err.Error()})
-		}
-
-		cluster.SendToUser(input.Message, input.User)
+	cluster, err := chatConnRepo.Get(input.Cluster)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"status": err.Error()})
 	}
+
+	cluster.SendToUser(input.Message, input.Username)
 	c.JSON(http.StatusOK, gin.H{"status": "OK"})
 }

@@ -42,6 +42,7 @@ func (zkobj *zookeeper) get(zNode string) (result []byte, err error) {
 	return
 }
 
+// watch on znode event continuously github.com/samuel/go-zookeeper/zk lib doesn't handle it
 func (zkobj *zookeeper) childrenW(znode string) (chan *zkEvent, error) {
 	c := make(chan *zkEvent)
 	child, _, evCh, err := zkobj.connection.ChildrenW(znode)

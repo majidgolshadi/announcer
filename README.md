@@ -88,16 +88,17 @@ Samples
 ```
 > **Attention:** You should put ["%s"](https://golang.org/pkg/fmt/) instead of username who this message will be send for
 
-In order to send a message to all online users you need to set channel_id **negative number**.
+In order to send a message to **all online users** you need to set channel_id **negative number**.
 
 **Announce user message:**
 **POST** request **/v1/announce/user** with json data like
 ```json
 {
-    "user": "USER_ID",
+    "username": "USERNAME",
     "message": "<message xml:lang='en' to='%s' type='chat' id='ID_NUMBER' xmlns='jabber:client'><body>MESSAGE_CONTENT</body><body xml:lang='REPLY_ON_THREAD_ID'>989198872580</body><body xml:lang='MAJOR_TYPE'>SIMPLE_CHAT</body><body xml:lang='MINOR_TYPE'>TEXT</body><body xml:lang='REPLY_ON_MESSAGE_ID'>15219732781131af24fc1zwf</body><body xml:lang='SEND_TIME_IN_GMT'>1521973339583</body></message>"
 }
 ```
+Message will be send to specific user without any check that is he online or not
 
 connection handling
 -------------------
