@@ -158,6 +158,15 @@ func initLogService(logConfig Log) {
 		log.SetFormatter(&log.JSONFormatter{})
 	}
 
+	switch logConfig.Format {
+	case "json":
+		log.SetFormatter(&log.JSONFormatter{})
+	case "text":
+		log.SetFormatter(&log.TextFormatter{})
+	default:
+		break
+	}
+
 	if logConfig.LogPoint != "" {
 		f, err := os.Create(logConfig.LogPoint)
 		if err != nil {

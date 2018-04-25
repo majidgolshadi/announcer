@@ -15,7 +15,7 @@ rest_api_port=":8080"
 debug_port=":6060" #stack trace debuging port
 
 [log]
-format="json" #json/text (default:text)
+format="json" #sequence/json/text (default:sequence)
 log_level="info" #info/error/warning (default:warning)
 log_point="/path/to/log/file" #optional
 
