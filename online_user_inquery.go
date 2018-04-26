@@ -39,7 +39,8 @@ func OnlineUserInquiryFactory(mysqlAddress string, mysqlUsername string, mysqlPa
 		return nil, err
 	}
 
-	err = ouq.redisConn.connectAlways()
+	// we only want to force connect to mysql only
+	ouq.redisConn.connectAlways()
 	return ouq, err
 }
 
@@ -82,8 +83,12 @@ func (ouq *onlineUserInquiry) IsOnline(username string) bool {
 }
 
 // Get all online users from redis
-func (ouq *onlineUserInquiry) getAllOnlineUsers() ([]string, error) {
-	return ouq.redisConn.connection().HKeys(ouq.redisHashTable).Result()
+func (ouq *onlineUserInquiry) getAllOnlineUsers() (users []string, err error) {
+	if ouq.redisConn.connStatus {
+		return ouq.redisConn.connection().HKeys(ouq.redisHashTable).Result()
+	}
+
+	return
 }
 
 // fetch from mysql
