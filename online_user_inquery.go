@@ -1,9 +1,9 @@
 package client_announcer
 
 import (
-	log "github.com/sirupsen/logrus"
 	"database/sql"
 	"fmt"
+	log "github.com/sirupsen/logrus"
 )
 
 type onlineUserInquiry struct {
@@ -44,8 +44,8 @@ func OnlineUserInquiryFactory(mysqlAddress string, mysqlUsername string, mysqlPa
 	return ouq, err
 }
 
-func (ouq *onlineUserInquiry) GetOnlineUsers(channel int) ([]string, error) {
-	if channel < 0 {
+func (ouq *onlineUserInquiry) GetOnlineUsers(channel string) ([]string, error) {
+	if channel == "officialsoroushchannel" {
 		return ouq.getAllOnlineUsers()
 	}
 
@@ -68,7 +68,7 @@ func (ouq *onlineUserInquiry) GetOnlineUsers(channel int) ([]string, error) {
 		}
 	}
 
-	log.WithFields(log.Fields{"channel users": channelUserCount, "online users": len(onlineUsers)})
+	log.WithFields(log.Fields{"all": channelUserCount, "online": len(onlineUsers)}).Info("channel users")
 	return onlineUsers, nil
 }
 
@@ -92,8 +92,8 @@ func (ouq *onlineUserInquiry) getAllOnlineUsers() (users []string, err error) {
 }
 
 // fetch from mysql
-func (ouq *onlineUserInquiry) getChannelUsers(channelID int) (rows *sql.Rows, err error) {
-	query := fmt.Sprintf("select member_username from ws_channel_members where member_channelid='%d'", channelID)
+func (ouq *onlineUserInquiry) getChannelUsers(channelID string) (rows *sql.Rows, err error) {
+	query := fmt.Sprintf("select * from ws_channel_members as `wm` INNER JOIN ws_channel_data as `wd` ON (wm.member_channelid = wd.channel_id) where wd.channel_channelid = '%s", channelID)
 	result, err := ouq.mysqlConn.connection.Query(query)
 
 	if err != nil {

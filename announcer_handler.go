@@ -8,7 +8,7 @@ import (
 type announceChannelRequest struct {
 	Cluster   string `json:"cluster"`
 	Message   string `json:"message" binding:"required"`
-	ChannelId int    `json:"channel_id" binding:"required"`
+	ChannelId string `json:"channel_id" binding:"required"`
 }
 
 func AnnounceChannelHandler(c *gin.Context) {
@@ -28,7 +28,7 @@ func AnnounceChannelHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"status": err.Error()})
 	}
 
-	cluster.SendToUsers(input.Message, users)
+	go cluster.SendToUsers(input.Message, users)
 	c.JSON(http.StatusOK, gin.H{"status": "OK"})
 }
 
