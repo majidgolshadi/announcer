@@ -40,7 +40,7 @@ func OnlineUserInquiryFactory(mysqlAddress string, mysqlUsername string, mysqlPa
 	}
 
 	// we only want to force connect to mysql only
-	ouq.redisConn.connectAlways()
+	ouq.redisConn.retryToConnect()
 	return ouq, err
 }
 

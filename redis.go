@@ -28,6 +28,11 @@ func (r *redisDs) connectAlways() (err error) {
 	return
 }
 
+func (r *redisDs) retryToConnect() {
+	r.connect()
+	r.keepConnectionAlive(time.Duration(r.CheckInterval) * time.Second)
+}
+
 func (r *redisDs) connect() (err error) {
 	r.conn = redis.NewClient(&redis.Options{
 		Addr:     r.Address,

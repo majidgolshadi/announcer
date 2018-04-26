@@ -74,7 +74,6 @@ func (cluster *Cluster) createSenderInstance() Sender {
 }
 
 func (cluster *Cluster) SendToUsers(msgTemplate string, users []string) {
-	log.Info("users to send ", len(users))
 	for _, user := range users {
 		<-cluster.ticker.C
 		cluster.SendToUser(msgTemplate, user)
