@@ -33,9 +33,9 @@ func AnnounceChannelHandler(c *gin.Context) {
 }
 
 type announceUserRequest struct {
-	Cluster string `json:"cluster"`
-	Message string `json:"message" binding:"required"`
-	Username    string `json:"username" binding:"required"`
+	Cluster  string `json:"cluster"`
+	Message  string `json:"message" binding:"required"`
+	Username string `json:"username" binding:"required"`
 }
 
 func AnnounceUserHandler(c *gin.Context) {

@@ -135,9 +135,13 @@ func main() {
 		return
 	}
 
-	onlineUserInquiry, _ := client_announcer.OnlineUserInquiryFactory(
+	onlineUserInquiry, err := client_announcer.OnlineUserInquiryFactory(
 		cnf.Mysql.Address, cnf.Mysql.Username, cnf.Mysql.Password, cnf.Mysql.DB,
 		cnf.Redis.ClusterNodes, cnf.Redis.Password, cnf.Redis.DB, cnf.Redis.HashTable, cnf.Redis.CheckInterval)
+	if err != nil {
+		log.Fatal("inquiry error: ", err.Error())
+		return
+	}
 
 	defer onlineUserInquiry.Close()
 	log.Println(client_announcer.RunHttpServer(cnf.HttpPort, onlineUserInquiry, chatConnRepo))

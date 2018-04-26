@@ -35,6 +35,7 @@ func (cluster *Cluster) initRateLimitTicker() {
 	}
 
 	cluster.ticker = time.NewTicker(sleepTime)
+	log.Info("ticker init with sleep time ", sleepTime)
 }
 
 func (cluster *Cluster) connect() (err error) {
@@ -73,6 +74,7 @@ func (cluster *Cluster) createSenderInstance() Sender {
 }
 
 func (cluster *Cluster) SendToUsers(msgTemplate string, users []string) {
+	log.Info("users to send ", len(users))
 	for _, user := range users {
 		<-cluster.ticker.C
 		cluster.SendToUser(msgTemplate, user)

@@ -7,65 +7,67 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type Redis struct {
-	Address  string
-	Password string
-	Database int
+type redisDs struct {
+	Address       string
+	Password      string
+	Database      int
+	CheckInterval int
 
-	HashTable                 string
-	CheckInterval             int
-	connection                *redis.Client
-	connectionStatus          bool
-	keepConnectionAliveTicker *time.Ticker
+	connStatus      bool
+	conn            *redis.Client
+	checkConnTicker *time.Ticker
+	logger          *log.Entry
 }
 
-func (r *Redis) keepConnectionAlive(duration time.Duration) {
-	if r.keepConnectionAliveTicker != nil {
-		r.keepConnectionAliveTicker.Stop()
+func (r *redisDs) connectAlways() (err error) {
+	if err = r.connect(); err != nil {
+		return err
 	}
 
-	r.keepConnectionAliveTicker = time.NewTicker(duration)
-	go func() {
-		for range r.keepConnectionAliveTicker.C {
-			if r.connectionStatus == false {
-				log.Info("try to connect to redis...")
-				r.connect()
-			}
-
-			if statusCmd := r.connection.Ping(); statusCmd.Err() != nil {
-				log.WithField("error", statusCmd.Err()).Warn("redis connection lost")
-				r.close()
-				r.connectionStatus = false
-			}
-		}
-	}()
+	r.keepConnectionAlive(time.Duration(r.CheckInterval) * time.Second)
+	return
 }
 
-func (r *Redis) connect() {
-	r.connection = redis.NewClient(&redis.Options{
+func (r *redisDs) connect() (err error) {
+	r.conn = redis.NewClient(&redis.Options{
 		Addr:     r.Address,
 		Password: r.Password,
 		DB:       r.Database,
 	})
 
-	r.keepConnectionAlive(time.Duration(r.CheckInterval) * time.Second)
-	r.connectionStatus = true
+	_, err = r.conn.Ping().Result()
+	r.connStatus = bool(err == nil)
+	return err
 }
 
-func (r *Redis) usernameExists(username string) bool {
-	if r.connectionStatus {
-		result, _ := r.connection.HGet(r.HashTable, username).Result()
-		return result != ""
-	}
+func (r *redisDs) keepConnectionAlive(duration time.Duration) {
+	r.checkConnTicker = time.NewTicker(duration)
+	go func() {
+		for range r.checkConnTicker.C {
+			if !r.connStatus {
+				log.Info("try to connect to redis...")
+				r.connect()
+			}
 
-	return true
+			if statusCmd := r.conn.Ping(); statusCmd.Err() != nil {
+				log.WithField("error", statusCmd.Err()).Warn("redis connection lost")
+				r.close()
+				r.connStatus = false
+			}
+		}
+	}()
 }
 
-func (r *Redis) getAllUsers() ([]string, error) {
-	return r.connection.HKeys(r.HashTable).Result()
+func (r *redisDs) connectionStatus() bool {
+	return r.connStatus
 }
 
-func (r *Redis) close() {
+func (r *redisDs) connection() *redis.Client {
+	return r.conn
+}
+
+func (r *redisDs) close() {
 	log.Info("close redis connections to ", r.Address)
-	r.connection.Close()
+	r.checkConnTicker.Stop()
+	r.conn.Close()
 }

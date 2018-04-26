@@ -7,43 +7,32 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type Mysql struct {
-	username string
-	password string
-	address  string
-	database string
+type mysql struct {
+	Username string
+	Password string
+	Address  string
+	Database string
+	Charset  string
 
 	connection *sql.DB
 }
 
-func mysqlClientFactory(address string, username string, password string, database string) (*Mysql, error) {
-	m := &Mysql{
-		address:  address,
-		username: username,
-		password: password,
-		database: database,
+func (ms *mysql) connect() (err error) {
+	if ms.Charset != "" {
+		ms.Charset = "utf8"
 	}
 
-	if err := m.connect(); err != nil {
-		return nil, err
+	dataSourceName := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=%s",
+		ms.Username, ms.Password, ms.Address, ms.Database, ms.Charset)
+
+	if ms.connection, err = sql.Open("mysql", dataSourceName); err != nil {
+		return err
 	}
 
-	return m, nil
+	return ms.connection.Ping()
 }
 
-func (ms *Mysql) connect() (err error) {
-	dataSourceName := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8", ms.username, ms.password, ms.address, ms.database)
-	ms.connection, err = sql.Open("mysql", dataSourceName)
-	ms.connection.Ping()
-	return
-}
-
-func (ms *Mysql) getChannelUsers(channelId int) (*sql.Rows, error) {
-	query := fmt.Sprintf("select member_username from ws_channel_members where member_channelid='%d'", channelId)
-	return ms.connection.Query(query)
-}
-
-func (ms *Mysql) close() {
-	log.Info("close mysql connections to ", ms.address)
+func (ms *mysql) close() {
+	log.Info("close mysql connections to ", ms.Address)
 	ms.connection.Close()
 }

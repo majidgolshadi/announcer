@@ -1,14 +1,17 @@
 package client_announcer
 
 import (
-	"github.com/samuel/go-zookeeper/zk"
 	"strings"
 	"time"
+
+	"github.com/samuel/go-zookeeper/zk"
+	log "github.com/sirupsen/logrus"
 )
 
 type zookeeper struct {
 	connection       *zk.Conn
 	childrenSnapshot []string
+	logger           *log.Entry
 }
 
 type zkEvent struct {
@@ -27,17 +30,21 @@ func zookeeperFactory(zookeeperAddress string) (zkobj *zookeeper, err error) {
 	zkobj = &zookeeper{}
 
 	zkServers := strings.Split(zookeeperAddress, ",")
+	zkobj.logger = log.WithField("scope", "zookeeper")
+	zkobj.logger.Info("connect to ", zkServers)
 	zkobj.connection, _, err = zk.Connect(zkServers, time.Minute)
 
 	return
 }
 
 func (zkobj *zookeeper) save(zNode string, value []byte) (err error) {
+	zkobj.logger.WithField("data", string(value)).Info("store")
 	_, err = zkobj.connection.Create(zNode, value, int32(0), zk.WorldACL(zk.PermAll))
 	return
 }
 
 func (zkobj *zookeeper) get(zNode string) (result []byte, err error) {
+	zkobj.logger.Info("fetch data znode ", zNode)
 	result, _, err = zkobj.connection.Get(zNode)
 	return
 }
@@ -54,14 +61,16 @@ func (zkobj *zookeeper) childrenW(znode string) (chan *zkEvent, error) {
 
 	go func() {
 	listen:
+		zkobj.logger.Info("watch on znode ", znode)
 		for range evCh {
+			zkobj.logger.Info("get event")
 			child, _, evCh, err = zkobj.connection.ChildrenW(znode)
 			c <- zkobj.findEvent(zkobj.childrenSnapshot, child)
 			zkobj.childrenSnapshot = child
 			if err != nil {
-				println("children watcher error: ", err.Error())
-				goto listen
+				log.WithField("error", err.Error()).Error("children watcher error")
 			}
+			goto listen
 		}
 	}()
 
@@ -106,5 +115,6 @@ func difference(slice1 []string, slice2 []string) string {
 }
 
 func (zkobj *zookeeper) close() {
+	zkobj.logger.Info("close connection")
 	zkobj.connection.Close()
 }
