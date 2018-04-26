@@ -15,13 +15,15 @@ type ChatServerClusterRepository struct {
 	defaultCluster string
 }
 
-func ChatServerClusterRepositoryFactory(defaultCluster string) (repo *ChatServerClusterRepository, err error) {
-	repo = &ChatServerClusterRepository{
-		clusters:       make(map[string]*Cluster),
-		defaultCluster: defaultCluster,
+func ChatServerClusterRepositoryFactory(defaultCluster string) (*ChatServerClusterRepository, error) {
+	if defaultCluster == "" {
+		return nil, errors.New("default cluster must be define")
 	}
 
-	return
+	return &ChatServerClusterRepository{
+		clusters:       make(map[string]*Cluster),
+		defaultCluster: defaultCluster,
+	}, nil
 }
 
 func (r *ChatServerClusterRepository) Save(name string, cluster *Cluster) error {
