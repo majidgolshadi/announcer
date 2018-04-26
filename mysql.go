@@ -1,8 +1,8 @@
 package client_announcer
 
 import (
-	"database/sql"
 	"fmt"
+	"database/sql"
 	_ "github.com/go-sql-driver/mysql"
 	log "github.com/sirupsen/logrus"
 )
@@ -12,18 +12,13 @@ type mysql struct {
 	Password string
 	Address  string
 	Database string
-	Charset  string
 
 	connection *sql.DB
 }
 
 func (ms *mysql) connect() (err error) {
-	if ms.Charset != "" {
-		ms.Charset = "utf8"
-	}
-
-	dataSourceName := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=%s",
-		ms.Username, ms.Password, ms.Address, ms.Database, ms.Charset)
+	dataSourceName := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8",
+		ms.Username, ms.Password, ms.Address, ms.Database)
 
 	if ms.connection, err = sql.Open("mysql", dataSourceName); err != nil {
 		return err
