@@ -21,11 +21,13 @@ func AnnounceChannelHandler(c *gin.Context) {
 	users, err := onlineUserInq.GetOnlineUsers(input.ChannelId)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"status": err.Error()})
+		return
 	}
 
 	cluster, err := chatConnRepo.Get(input.Cluster)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"status": err.Error()})
+		return
 	}
 
 	go cluster.SendToUsers(input.Message, users)
@@ -48,6 +50,7 @@ func AnnounceUserHandler(c *gin.Context) {
 	cluster, err := chatConnRepo.Get(input.Cluster)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"status": err.Error()})
+		return
 	}
 
 	cluster.SendToUser(input.Message, input.Username)

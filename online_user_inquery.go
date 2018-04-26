@@ -13,6 +13,8 @@ type onlineUserInquiry struct {
 	redisHashTable string
 }
 
+const SoroushChannelId  = "officialsoroushchannel"
+
 func OnlineUserInquiryFactory(mysqlAddress string, mysqlUsername string, mysqlPassword string, mysqlDatabase string,
 	redisAddr string, redisPassword string, redisDb int, redisHashTable string, redisCheckInterval int) (ouq *onlineUserInquiry, err error) {
 
@@ -45,7 +47,7 @@ func OnlineUserInquiryFactory(mysqlAddress string, mysqlUsername string, mysqlPa
 }
 
 func (ouq *onlineUserInquiry) GetOnlineUsers(channel string) ([]string, error) {
-	if channel == "officialsoroushchannel" {
+	if channel == SoroushChannelId {
 		return ouq.getAllOnlineUsers()
 	}
 
@@ -93,7 +95,7 @@ func (ouq *onlineUserInquiry) getAllOnlineUsers() (users []string, err error) {
 
 // fetch from mysql
 func (ouq *onlineUserInquiry) getChannelUsers(channelID string) (rows *sql.Rows, err error) {
-	query := fmt.Sprintf("select * from ws_channel_members as `wm` INNER JOIN ws_channel_data as `wd` ON (wm.member_channelid = wd.channel_id) where wd.channel_channelid = '%s", channelID)
+	query := fmt.Sprintf("select member_username from ws_channel_members as `wm` INNER JOIN ws_channel_data as `wd` ON (wm.member_channelid = wd.channel_id) where wd.channel_channelid='%s'", channelID)
 	result, err := ouq.mysqlConn.connection.Query(query)
 
 	if err != nil {
