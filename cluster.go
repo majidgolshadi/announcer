@@ -76,11 +76,11 @@ func (cluster *Cluster) createSenderInstance() Sender {
 func (cluster *Cluster) SendToUsers(msgTemplate string, users []string) {
 	for _, user := range users {
 		<-cluster.ticker.C
-		cluster.SendToUser(msgTemplate, user)
+		cluster.sendToUser(msgTemplate, user)
 	}
 }
 
-func (cluster *Cluster) SendToUser(msgTemplate string, user string) {
+func (cluster *Cluster) sendToUser(msgTemplate string, user string) {
 	msg := fmt.Sprintf(msgTemplate, fmt.Sprintf("%s@%s", user, cluster.domain))
 	go func() {
 		cluster.sendWithRetry(msg)

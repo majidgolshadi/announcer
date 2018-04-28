@@ -53,6 +53,6 @@ func AnnounceUserHandler(c *gin.Context) {
 		return
 	}
 
-	cluster.SendToUser(input.Message, input.Username)
+	go cluster.SendToUsers(input.Message, []string{input.Username})
 	c.JSON(http.StatusOK, gin.H{"status": "OK"})
 }
