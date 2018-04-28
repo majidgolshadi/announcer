@@ -94,7 +94,7 @@ func TestRestoreClientCluster(t *testing.T) {
 	}
 
 	if cluster.Client.Username != "username" || cluster.Client.Password != "password" ||
-	cluster.Client.PingInterval != 2 || cluster.Client.Domain != "soroush.ir" ||
+		cluster.Client.PingInterval != 2 || cluster.Client.Domain != "soroush.ir" ||
 		cluster.Client.Resource != "announcer" {
 		t.Fail()
 	}

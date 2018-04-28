@@ -1,0 +1,28 @@
+version: '3'
+services:
+  kafka:
+    image: spotify/kafka
+    ports:
+      - "9092:9092"
+    environment:
+      ADVERTISED_HOST: 192.168.90.29
+      TOPICS: "test-topic"
+      ADVERTISED_PORT: 9092
+      ZK_CONNECT: zookeeper:2181
+  ejabberd:
+    image: rroemhild/ejabberd
+    ports:
+      - "8889:8889"
+      - "5222:5222"
+  redis:
+    image: redis
+    ports:
+      - "6379:6379"
+  mysql:
+    image: mysql:5.5
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: "123"
+      MYSQL_DATABASE: "testDB"
+
