@@ -125,8 +125,12 @@ func (cluster *Cluster) toJson() (result []byte) {
 }
 
 func (cluster *Cluster) Close() {
-	log.Info("close cluster connection ", cluster.Addresses)
-	cluster.ticker.Stop()
+	// for times that cluster connections are not active and we want to close that
+	if cluster.ticker != nil {
+		cluster.ticker.Stop()
+	}
+
+	log.Info("close cluster connections ", cluster.Addresses)
 	for _, conn := range cluster.connections {
 		conn.Close()
 	}
