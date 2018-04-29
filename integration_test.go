@@ -2,9 +2,9 @@ package client_announcer
 
 import (
 	"flag"
-	"testing"
 	"os"
 	"os/exec"
+	"testing"
 )
 
 var (

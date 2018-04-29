@@ -9,6 +9,8 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/majidgolshadi/client-announcer"
 	log "github.com/sirupsen/logrus"
+	"github.com/wvanbergen/kazoo-go"
+	"time"
 )
 
 type config struct {
@@ -16,12 +18,21 @@ type config struct {
 	DebugPort string `toml:"debug_port"`
 
 	Log       Log
+	Kafka     Kafka
 	Ejabberd  Ejabberd
 	Client    Client
 	Component Component
 	Zookeeper Zookeeper
 	Mysql     Mysql
 	Redis     Redis
+}
+
+type Kafka struct {
+	Zookeeper            string `toml:"zookeeper"`
+	Topics               string `toml:"topics"`
+	GroupName            string `toml:"group_name"`
+	Buffer               int    `toml:"buffer"`
+	CommitOffsetInterval int    `toml:"commit_offset_interval"`
 }
 
 type Log struct {
@@ -144,6 +155,24 @@ func main() {
 	}
 
 	defer onlineUserInquiry.Close()
+
+	if cnf.Kafka.Topics != "" {
+		commitOffsetInterval := time.Second * time.Duration(cnf.Kafka.CommitOffsetInterval)
+		kc := &client_announcer.KafkaConsumer{
+			Topics:               strings.Split(cnf.Kafka.Topics, ","),
+			GroupName:            cnf.Kafka.GroupName,
+			Buffer:               cnf.Kafka.Buffer,
+			CommitOffsetInterval: commitOffsetInterval,
+		}
+		kc.Zookeeper, kc.ZNode = kazoo.ParseConnectionString(cnf.Kafka.Zookeeper)
+		if err = kc.RunService(chatConnRepo, onlineUserInquiry); err != nil {
+			log.Fatal("kafka consumer error: ", err.Error())
+			return
+		}
+
+		defer kc.Close()
+	}
+
 	log.Println(client_announcer.RunHttpServer(cnf.HttpPort, onlineUserInquiry, chatConnRepo))
 }
 
