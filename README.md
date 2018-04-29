@@ -19,9 +19,17 @@ format="json" #sequence/json/text (default:sequence)
 log_level="info" #info/error/warning (default:warning)
 log_point="/path/to/log/file" #optional
 
+#Kafka consumer to get send request from kafka
+####these configurations are optional###
+[kafka]
+zookeeper="192.168.210.10:2181/kafka"
+topics="messages"
+group_name="announcer"
+buffer=1000
+commit_offset_interval=10
 
 #Zookeeper connection configuration for datastore and notification center purpose
-####this configuration is optional###
+####these configurations are optional###
 [zookeeper]
 cluster_nodes="192.168.95.171:2181"
 namespace="/watch" #Znode which data will be saved under
@@ -100,6 +108,9 @@ In order to send a message to **all online users** you need to set channel_id **
 ```
 Message will be send to specific user without any check that is he online or not
 
+Kafka APIs
+----------
+message structures are like rest api
 connection handling
 -------------------
 **Redis**

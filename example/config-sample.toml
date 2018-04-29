@@ -7,6 +7,14 @@ log_level="info" #info/error/warning (default:warning)
 log_point="/path/to/log/file" #optional
 
 #Optional
+[kafka]
+zookeeper="192.168.210.10:2181/kafka"
+topics="messages"
+group_name="announcer"
+buffer=1000
+commit_offset_interval=10
+
+#Optional
 [zookeeper]
 cluster_nodes="192.168.95.171:2181"
 namespace="/watch"

@@ -1,13 +1,14 @@
 package client_announcer
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/Shopify/sarama"
 	"github.com/wvanbergen/kafka/consumergroup"
 	"os"
 	"os/signal"
 	"time"
-	"encoding/json"
 )
 
 var tickTimeMsg *sarama.ConsumerMessage
@@ -20,46 +21,52 @@ type KafkaConsumer struct {
 	Buffer               int
 	CommitOffsetInterval time.Duration
 
-	consumer          *consumergroup.ConsumerGroup
+	consumer *consumergroup.ConsumerGroup
 }
 
-func (kc *KafkaConsumer) RunService(repository *ChatServerClusterRepository, onlineUserInquiry *onlineUserInquiry) error {
+type kafkaMsg struct {
+	ChannelID string `json:"channel_id"`
+	Username  string `json:"username"`
+	Message   string `json:"message"`
+	Cluster   string `json:"cluster"`
+}
+
+func (kc *KafkaConsumer) getUsers(onlineUserInquiry *onlineUserInquiry, req *kafkaMsg) (users []string, err error) {
+	if req.ChannelID == "" && req.Username == "" {
+		return nil, errors.New("channel_id or username is empty")
+	}
+
+	users = []string{req.Username}
+	if req.ChannelID != "" {
+		users, err = onlineUserInquiry.GetOnlineUsers(req.ChannelID)
+	}
+
+	return users, nil
+}
+
+func (kc *KafkaConsumer) RunService(repo *ChatServerClusterRepository, onlineUserInquiry *onlineUserInquiry) error {
 	c, err := kc.connect()
 	if err != nil {
 		return err
 	}
 
 	go func() {
-		for msg := range c {
-			recMsg := &kafkaMsg{}
-			if err := json.Unmarshal(msg, recMsg); err != nil {
-				println(err.Error())
-			}
+		var users []string
+		var cluster *Cluster
+		recMsg := &kafkaMsg{}
 
-			if recMsg.ChannelID == "" && recMsg.Username == ""{
-				println("bad request")
+		for req := range c {
+			if err := json.Unmarshal(req, recMsg); err != nil {
+				println(err.Error())
 				continue
 			}
 
-			if recMsg.Cluster == "" {
-				recMsg.Cluster = repository.defaultCluster
-			}
-
-			var users []string
-			if recMsg.Username != "" {
-				users = []string{recMsg.Username}
-			} else {
-				if users, err = onlineUserInquiry.GetOnlineUsers(recMsg.ChannelID); err != nil {
-					println(err.Error())
-					continue
-				}
-			}
-
-			cluster, err := repository.Get(recMsg.Cluster)
-			if err != nil {
+			if users, err = kc.getUsers(onlineUserInquiry, recMsg); err != nil {
 				println(err.Error())
+				continue
 			}
 
+			cluster, _ = repo.Get(recMsg.Cluster)
 			cluster.SendToUsers(recMsg.Message, users)
 		}
 	}()
