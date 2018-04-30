@@ -33,7 +33,7 @@ func RunHttpServer(port string, inquiry *onlineUserInquiry, repository *ChatServ
 			ctx.Error(API_NOT_FOUND_MESSAGE, fasthttp.StatusNotFound)
 		}
 
-		log.Infof("%s | %s | %d | %dns",
+		log.Debugf("%s | %s | %d | %dns",
 			ctx.Method(), ctx.Path(), ctx.Response.Header.StatusCode(), time.Now().UnixNano()-start)
 	})
 }
