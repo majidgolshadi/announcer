@@ -71,7 +71,7 @@ func (ouq *onlineUserInquiry) GetOnlineUsers(channel string) ([]string, error) {
 		}
 	}
 
-	log.WithFields(log.Fields{"all": channelUserCount, "online": len(onlineUsers)}).Info("channel users")
+	log.WithFields(log.Fields{"all": channelUserCount, "online": len(onlineUsers)}).Debug("channel users")
 	return onlineUsers, nil
 }
 
@@ -107,7 +107,7 @@ func (ouq *onlineUserInquiry) getChannelUsers(channelID string) (rows *sql.Rows,
 }
 
 func (ouq *onlineUserInquiry) Close() {
-	log.Info("close online user inquiry connections")
+	log.Warn("close online user inquiry connections")
 	ouq.mysql.close()
 	ouq.redis.close()
 }

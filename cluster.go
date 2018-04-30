@@ -90,7 +90,7 @@ func (cluster *Cluster) sendToUser(msgTemplate string, user string) {
 func (cluster *Cluster) sendWithRetry(msg string) {
 	for i := 1; i < cluster.SendRetry; i++ {
 		if err := cluster.sendMsg(msg); err == nil {
-			log.WithField("message", msg).Info("message sent")
+			log.WithField("message", msg).Debug("message sent")
 			return
 		}
 		log.WithField("message", msg).Warn("retry to send message after ", i, " second...")

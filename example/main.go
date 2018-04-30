@@ -173,12 +173,14 @@ func main() {
 		defer kc.Close()
 	}
 
-	log.Println(client_announcer.RunHttpServer(cnf.HttpPort, onlineUserInquiry, chatConnRepo))
+	client_announcer.RunHttpServer(cnf.HttpPort, onlineUserInquiry, chatConnRepo)
 }
 
 // TODO: Add tag for any application log
 func initLogService(logConfig Log) {
 	switch logConfig.LogLevel {
+	case "debug":
+		log.SetLevel(log.DebugLevel)
 	case "info":
 		log.SetLevel(log.InfoLevel)
 	case "error":

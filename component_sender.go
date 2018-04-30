@@ -33,7 +33,7 @@ func (cs *ComponentSender) Connect(address string) (err error) {
 	go func() {
 		log.Info("connect component ", cs.Name, " to ", address)
 		if err := cs.connection.Run(); err != nil {
-			log.Fatal("ejabberd component connection error: ", err.Error())
+			log.Error("ejabberd component connection error: ", err.Error())
 		}
 	}()
 

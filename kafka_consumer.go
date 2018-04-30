@@ -1,6 +1,7 @@
 package client_announcer
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -9,7 +10,6 @@ import (
 	"os"
 	"os/signal"
 	"time"
-	"encoding/base64"
 )
 
 var tickTimeMsg *sarama.ConsumerMessage
