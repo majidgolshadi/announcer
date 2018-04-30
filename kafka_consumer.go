@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/signal"
 	"time"
+	"encoding/base64"
 )
 
 var tickTimeMsg *sarama.ConsumerMessage
@@ -67,7 +68,13 @@ func (kc *KafkaConsumer) RunService(repo *ChatServerClusterRepository, onlineUse
 			}
 
 			cluster, _ = repo.Get(recMsg.Cluster)
-			cluster.SendToUsers(recMsg.Message, users)
+			msg, err := base64.StdEncoding.DecodeString(recMsg.Message)
+			if err != nil {
+				println(err.Error())
+				continue
+			}
+
+			cluster.SendToUsers(string(msg), users)
 		}
 	}()
 
