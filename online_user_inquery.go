@@ -2,8 +2,8 @@ package client_announcer
 
 import (
 	"database/sql"
-	"fmt"
 	log "github.com/sirupsen/logrus"
+	"fmt"
 )
 
 type onlineUserInquiry struct {
@@ -14,7 +14,8 @@ type onlineUserInquiry struct {
 }
 
 const SoroushChannelId = "officialsoroushchannel"
-const UsersChannelUsernameQuery = "select member_username from ws_channel_members as `wm` INNER JOIN ws_channel_data as `wd` ON (wm.member_channelid = wd.channel_id) where wd.channel_channelid='%s'"
+const ChannelIDQuery = `select channel_id from ws_channel_data where channel_channelid="%s"`
+const UsersChannelUsernameQuery = `select member_username from ws_channel_members where member_channelid="%s"`
 
 func OnlineUserInquiryFactory(mysqlAddress string, mysqlUsername string, mysqlPassword string, mysqlDatabase string,
 	redisAddr string, redisPassword string, redisDb int, redisHashTable string, redisCheckInterval int) (ouq *onlineUserInquiry, err error) {
@@ -53,6 +54,7 @@ func (ouq *onlineUserInquiry) GetOnlineUsers(channel string) ([]string, error) {
 	}
 
 	users, err := ouq.getChannelUsers(channel)
+	defer users.Close()
 	if err != nil {
 		return nil, err
 	}
@@ -95,10 +97,14 @@ func (ouq *onlineUserInquiry) getAllOnlineUsers() (users []string, err error) {
 }
 
 // fetch from mysql
-func (ouq *onlineUserInquiry) getChannelUsers(channelID string) (rows *sql.Rows, err error) {
-	query := fmt.Sprintf(UsersChannelUsernameQuery, channelID)
-	result, err := ouq.mysql.connection.Query(query)
+func (ouq *onlineUserInquiry) getChannelUsers(channelID string) (result *sql.Rows, err error) {
+	var id string
+	err = ouq.mysql.connection.QueryRow(fmt.Sprintf(ChannelIDQuery, channelID)).Scan(&id)
+	if err != nil {
+		return nil, err
+	}
 
+	result, err = ouq.mysql.connection.Query(fmt.Sprintf(UsersChannelUsernameQuery, id))
 	if err != nil {
 		log.Warn("mysql result error ", err.Error())
 	}
