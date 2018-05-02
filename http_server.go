@@ -22,7 +22,7 @@ func RunHttpServer(port string, inquiry *onlineUserInquiry, repository *ChatServ
 
 	return fasthttp.ListenAndServe(port, func(ctx *fasthttp.RequestCtx) {
 		ctx.SetContentType("application/json")
-		start := time.Now().UnixNano()
+		start := time.Now()
 
 		switch string(ctx.Path()) {
 		case "/v1/announce/channel":
@@ -33,7 +33,7 @@ func RunHttpServer(port string, inquiry *onlineUserInquiry, repository *ChatServ
 			ctx.Error(API_NOT_FOUND_MESSAGE, fasthttp.StatusNotFound)
 		}
 
-		log.Debugf("%s | %s | %d | %dns",
-			ctx.Method(), ctx.Path(), ctx.Response.Header.StatusCode(), time.Now().UnixNano()-start)
+		log.Infof("%s | %s | %d | %dns",
+			ctx.Method(), ctx.Path(), ctx.Response.Header.StatusCode(), time.Now().Sub(start))
 	})
 }
