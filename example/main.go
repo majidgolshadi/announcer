@@ -106,13 +106,6 @@ func main() {
 		log.Fatal("create repo error ", err.Error())
 	}
 
-	if cnf.Zookeeper.ClusterNodes != "" {
-		if err = chatConnRepo.SetZookeeperAsDataStore(cnf.Zookeeper.ClusterNodes, cnf.Zookeeper.NameSpace); err != nil {
-			log.Fatal("set zookeeper as data-store error ", err.Error())
-			return
-		}
-	}
-
 	defer chatConnRepo.Close()
 
 	cluster = &client_announcer.Cluster{

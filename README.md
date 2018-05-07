@@ -28,12 +28,6 @@ group_name="announcer"
 buffer=1000
 commit_offset_interval=10
 
-#Zookeeper connection configuration for datastore and notification center purpose
-####these configurations are optional###
-[zookeeper]
-cluster_nodes="192.168.95.171:2181"
-namespace="/watch" #Znode which data will be saved under
-
 #Mysql database connection configuration which contain ws_channel_member table
 [mysql]
 address="127.0.0.1:3306"

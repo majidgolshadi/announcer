@@ -1,0 +1,83 @@
+package logic
+
+import (
+	"database/sql"
+	"fmt"
+	log "github.com/sirupsen/logrus"
+)
+
+type ChannelAct struct {
+	MessageTemplate string
+	ChannelID       string
+}
+
+type ChannelActor struct {
+	Redis          *redis
+	RedisHashTable string
+	Mysql          *mysql
+}
+
+const SoroushChannelId = "officialsoroushchannel"
+const ChannelIDQuery = `select channel_id from ws_channel_data where channel_channelid="%s"`
+const UsersChannelUsernameQuery = `select member_username from ws_channel_members where member_channelid="%s"`
+
+func (ca *ChannelActor) Listen(chanAct chan<- *ChannelAct, msg <-chan string) {
+	for rec := range chanAct {
+
+		users, err := ca.getWhoSendTo(rec.ChannelID)
+		if err != nil {
+			log.WithField("error", err.Error()).Error("find user list error")
+			continue
+		}
+
+		for user := range users {
+			msg <- fmt.Sprintf(rec.MessageTemplate, user)
+		}
+	}
+}
+
+func (ca *ChannelActor) getWhoSendTo(channelID string) (users []string, err error) {
+	if channelID == SoroushChannelId {
+		users, _ = ca.Redis.HKeys(ca.RedisHashTable)
+		return users, nil
+	}
+
+	rowUsers, err := ca.getChannelUsers(channelID)
+	defer rowUsers.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	channelUserCount := 0
+	var onlineUsers []string
+	var username string
+	for rowUsers.Next() {
+		channelUserCount++
+		if err := rowUsers.Scan(&username); err != nil {
+			return nil, err
+		}
+
+		// Is he/she online
+		if result, _ := ca.Redis.HGet(ca.RedisHashTable, username); result != "" {
+			onlineUsers = append(onlineUsers, username)
+		}
+	}
+
+	log.WithFields(log.Fields{"channel_users": channelUserCount, "online": len(onlineUsers), "channel_id": channelID}).Debug("channel users")
+	return onlineUsers, nil
+}
+
+func (ca *ChannelActor) getChannelUsers(channelID string) (result *sql.Rows, err error) {
+	var id string
+	err = ca.Mysql.GetConnection().QueryRow(fmt.Sprintf(ChannelIDQuery, channelID)).Scan(&id)
+	if err != nil {
+		return nil, err
+	}
+
+	result, err = ca.Mysql.GetConnection().Query(fmt.Sprintf(UsersChannelUsernameQuery, id))
+	if err != nil {
+		log.Warn("mysql result error ", err.Error())
+	}
+
+	return result, err
+}
