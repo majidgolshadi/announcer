@@ -6,7 +6,6 @@ format="json" #json/text (default:text)
 log_level="info" #info/error/warning (default:warning)
 log_point="/path/to/log/file" #optional
 
-#Optional
 [kafka]
 zookeeper="192.168.210.10:2181/kafka"
 topics="messages"

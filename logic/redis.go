@@ -35,13 +35,14 @@ func NewRedis(opt *RedisOpt) *redis {
 	opt.init()
 
 	return &redis{
-		opt: opt,
+		opt:             opt,
+		checkConnTicker: time.NewTicker(opt.CheckInterval),
 	}
 }
 
-func (r *redis) ConnectAndKeep() {
+func (r *redis) connectAndKeep() {
 	r.connect()
-	go r.keepConnectionAlive(r.opt.CheckInterval)
+	go r.keepConnectionAlive()
 }
 
 func (r *redis) connect() (err error) {
@@ -60,9 +61,7 @@ func (r *redis) connect() (err error) {
 	return err
 }
 
-func (r *redis) keepConnectionAlive(duration time.Duration) {
-	r.checkConnTicker = time.NewTicker(duration)
-
+func (r *redis) keepConnectionAlive() {
 	for range r.checkConnTicker.C {
 		if !r.connStatus {
 			log.Info("try to connect to redis...")
@@ -89,5 +88,8 @@ func (r *redis) HGet(key string, filed string) (string, error) {
 func (r *redis) close() {
 	log.Info("close redis connections to ", r.opt.Address)
 	r.checkConnTicker.Stop()
-	r.conn.Close()
+
+	if r.conn != nil {
+		r.conn.Close()
+	}
 }

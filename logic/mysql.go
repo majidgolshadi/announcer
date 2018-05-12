@@ -49,7 +49,8 @@ func NewMysql(opt *MysqlOpt) (*mysql, error) {
 	}
 
 	return &mysql{
-		opt: opt,
+		opt:             opt,
+		checkConnTicker: time.NewTicker(opt.CheckInterval),
 	}, nil
 }
 
@@ -61,12 +62,11 @@ func (ms *mysql) connect() (err error) {
 		return err
 	}
 
+	go ms.keepConnectionAlive()
 	return ms.conn.Ping()
 }
 
-func (ms *mysql) keepConnectionAlive(duration time.Duration) {
-	ms.checkConnTicker = time.NewTicker(duration)
-
+func (ms *mysql) keepConnectionAlive() {
 	for range ms.checkConnTicker.C {
 		if !ms.connStatus {
 			log.Info("try to connect to redis...")
@@ -89,5 +89,8 @@ func (ms *mysql) GetConnection() *sql.DB {
 func (ms *mysql) close() {
 	log.Info("close mysql connections to ", ms.opt.Address)
 	ms.checkConnTicker.Stop()
-	ms.conn.Close()
+
+	if ms.conn != nil {
+		ms.conn.Close()
+	}
 }

@@ -42,7 +42,7 @@ func (opt *EjabberdComponentOpt) init() error {
 	}
 
 	if opt.PingInterval == 0 {
-		opt.PingInterval = 5
+		opt.PingInterval = 5 * time.Second
 	}
 
 	return nil
@@ -54,7 +54,8 @@ func NewEjabberdComponent(opt *EjabberdComponentOpt) (*ejabberdComponent, error)
 	}
 
 	return &ejabberdComponent{
-		opt: opt,
+		opt:             opt,
+		checkConnTicker: time.NewTicker(opt.PingInterval),
 		xcoOpt: xco.Options{
 			Name:         opt.Name,
 			Address:      opt.Host,
@@ -75,13 +76,11 @@ func (ec *ejabberdComponent) Connect() (err error) {
 		}
 	}()
 
-	go ec.keepConnectionAlive(ec.opt.PingInterval)
+	go ec.keepConnectionAlive()
 	return nil
 }
 
-func (ec *ejabberdComponent) keepConnectionAlive(duration time.Duration) {
-	ec.checkConnTicker = time.NewTicker(duration)
-
+func (ec *ejabberdComponent) keepConnectionAlive() {
 	for range ec.checkConnTicker.C {
 		ec.conn.Send(fmt.Sprintf("<iq to='%s' type='get' id='%s'><ping xmlns='urn:xmpp:ping'/></iq>", ec.opt.Domain, generateMsgID(5)))
 	}
@@ -113,5 +112,8 @@ func (ec *ejabberdComponent) Send(msg string) error {
 func (ec *ejabberdComponent) Close() {
 	log.Info("close component ", ec.opt.Name, " connection from", ec.opt.Host)
 	ec.checkConnTicker.Stop()
-	ec.conn.Close()
+
+	if ec.conn != nil {
+		ec.conn.Close()
+	}
 }

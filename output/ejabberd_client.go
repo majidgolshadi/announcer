@@ -54,7 +54,8 @@ func NewEjabberdClient(opt *EjabberdClientOpt) (*ejabberdClient, error) {
 	}
 
 	return &ejabberdClient{
-		opt: opt,
+		opt:             opt,
+		checkConnTicker: time.NewTicker(opt.PingInterval),
 	}, nil
 }
 
@@ -76,7 +77,7 @@ func (ec *ejabberdClient) Connect() (err error) {
 		return err
 	}
 
-	go ec.keepConnectionAlive(ec.opt.PingInterval)
+	go ec.keepConnectionAlive()
 	return
 }
 
@@ -88,9 +89,7 @@ func (ec *ejabberdClient) getClientResource() string {
 	return fmt.Sprintf("%s-%s", ec.opt.ResourcePrefix, ec.opt.Host)
 }
 
-func (ec *ejabberdClient) keepConnectionAlive(duration time.Duration) {
-	ec.checkConnTicker = time.NewTicker(duration)
-
+func (ec *ejabberdClient) keepConnectionAlive() {
 	for range ec.checkConnTicker.C {
 		log.Info("ping server ", ec.opt.Host)
 		ec.conn.Ping()

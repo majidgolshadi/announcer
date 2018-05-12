@@ -52,8 +52,8 @@ func (opt *KafkaConsumerOpt) init() error {
 		opt.ReadBufferSize = 100
 	}
 
-	if opt.CommitOffsetInterval == time.Duration(0) {
-		opt.CommitOffsetInterval = time.Duration(5)
+	if opt.CommitOffsetInterval == 0 {
+		opt.CommitOffsetInterval = 5 * time.Second
 	}
 
 	return nil
@@ -73,7 +73,10 @@ func NewKafkaConsumer(option *KafkaConsumerOpt) (*KafkaConsumer, error) {
 		return nil, err
 	}
 
-	kc := &KafkaConsumer{}
+	kc := &KafkaConsumer{
+		opt:          option,
+		commitTicker: time.NewTicker(option.CommitOffsetInterval),
+	}
 	kc.config = consumergroup.NewConfig()
 
 	kc.config.ChannelBufferSize = option.ReadBufferSize
@@ -88,7 +91,6 @@ type kafkaMsg struct {
 	ChannelID string `json:"channel_id"`
 	Username  string `json:"username"`
 	Message   string `json:"message"`
-	Cluster   string `json:"cluster"`
 }
 
 func (kc *KafkaConsumer) Listen(inputChannel chan<- *logic.ChannelAct, inputUser chan<- *logic.UserAct) (err error) {
@@ -99,35 +101,33 @@ func (kc *KafkaConsumer) Listen(inputChannel chan<- *logic.ChannelAct, inputUser
 	go kc.setupInterruptListener()
 	go kc.tickOffsetCommitter()
 
-	go func() {
-		for message := range kc.consumerGroup.Messages() {
-			req := &kafkaMsg{}
-			if err := json.Unmarshal(message.Value, req); err != nil {
-				println(err.Error())
-				continue
-			}
-
-			mstTemp, err := base64.StdEncoding.DecodeString(req.Message)
-			if err != nil {
-				println(err.Error())
-				continue
-			}
-
-			if req.Username != "" {
-				inputUser <- &logic.UserAct{
-					MessageTemplate: string(mstTemp),
-					Username:        req.Username,
-				}
-			} else {
-				inputChannel <- &logic.ChannelAct{
-					MessageTemplate: string(mstTemp),
-					ChannelID:       req.ChannelID,
-				}
-			}
-
-			kc.lastMessage = message
+	for message := range kc.consumerGroup.Messages() {
+		req := &kafkaMsg{}
+		if err := json.Unmarshal(message.Value, req); err != nil {
+			println(err.Error())
+			continue
 		}
-	}()
+
+		mstTemp, err := base64.StdEncoding.DecodeString(req.Message)
+		if err != nil {
+			println(err.Error())
+			continue
+		}
+
+		if req.Username != "" {
+			inputUser <- &logic.UserAct{
+				MessageTemplate: string(mstTemp),
+				Username:        req.Username,
+			}
+		} else {
+			inputChannel <- &logic.ChannelAct{
+				MessageTemplate: string(mstTemp),
+				ChannelID:       req.ChannelID,
+			}
+		}
+
+		kc.lastMessage = message
+	}
 
 	return nil
 }
@@ -142,8 +142,6 @@ func (kc *KafkaConsumer) setupInterruptListener() {
 }
 
 func (kc *KafkaConsumer) tickOffsetCommitter() {
-	kc.commitTicker = time.NewTicker(kc.opt.CommitOffsetInterval * time.Second)
-
 	for range kc.commitTicker.C {
 		if kc.lastMessage != nil {
 			kc.consumerGroup.CommitUpto(kc.lastMessage)
@@ -153,6 +151,9 @@ func (kc *KafkaConsumer) tickOffsetCommitter() {
 
 func (kc *KafkaConsumer) Close() {
 	kc.commitTicker.Stop()
-	kc.consumerGroup.CommitUpto(kc.lastMessage)
-	kc.consumerGroup.Close()
+
+	if kc.consumerGroup != nil {
+		kc.consumerGroup.CommitUpto(kc.lastMessage)
+		kc.consumerGroup.Close()
+	}
 }

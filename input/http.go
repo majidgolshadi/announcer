@@ -22,9 +22,9 @@ func RunHttpServer(port string, inputChannel chan<- *logic.ChannelAct, inputUser
 
 		switch string(ctx.Path()) {
 		case "/v1/announce/channel":
-			V1AnnounceChannelHandler(ctx, inputChannel)
+			v1AnnounceChannelHandler(ctx, inputChannel)
 		case "/v1/announce/user":
-			V1AnnounceUserHandler(ctx, inputUser)
+			v1AnnounceUserHandler(ctx, inputUser)
 		default:
 			ctx.Error(API_NOT_FOUND_MESSAGE, fasthttp.StatusNotFound)
 		}
@@ -39,7 +39,7 @@ type announceChannelRequest struct {
 	ChannelId string `json:"channel_id" binding:"required"`
 }
 
-func V1AnnounceChannelHandler(ctx *fasthttp.RequestCtx, inputChannel chan<- *logic.ChannelAct) {
+func v1AnnounceChannelHandler(ctx *fasthttp.RequestCtx, inputChannel chan<- *logic.ChannelAct) {
 	if string(ctx.Method()) != "POST" {
 		ctx.Error(API_NOT_FOUND_MESSAGE, fasthttp.StatusNotFound)
 		return
@@ -72,7 +72,7 @@ type announceUserRequest struct {
 	Username string `json:"username" binding:"required"`
 }
 
-func V1AnnounceUserHandler(ctx *fasthttp.RequestCtx, inputUser chan<- *logic.UserAct) {
+func v1AnnounceUserHandler(ctx *fasthttp.RequestCtx, inputUser chan<- *logic.UserAct) {
 	if string(ctx.Method()) != "POST" {
 		ctx.Error(API_NOT_FOUND_MESSAGE, fasthttp.StatusNotFound)
 		return

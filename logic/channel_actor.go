@@ -21,7 +21,12 @@ const SoroushChannelId = "officialsoroushchannel"
 const ChannelIDQuery = `select channel_id from ws_channel_data where channel_channelid="%s"`
 const UsersChannelUsernameQuery = `select member_username from ws_channel_members where member_channelid="%s"`
 
-func (ca *ChannelActor) Listen(chanAct chan<- *ChannelAct, msg <-chan string) {
+func (ca *ChannelActor) Listen(chanAct <-chan *ChannelAct, msg chan<- string) error {
+	ca.Redis.connectAndKeep()
+	if err := ca.Mysql.connect(); err != nil {
+		return err
+	}
+
 	for rec := range chanAct {
 
 		users, err := ca.getWhoSendTo(rec.ChannelID)
@@ -34,6 +39,8 @@ func (ca *ChannelActor) Listen(chanAct chan<- *ChannelAct, msg <-chan string) {
 			msg <- fmt.Sprintf(rec.MessageTemplate, user)
 		}
 	}
+
+	return nil
 }
 
 func (ca *ChannelActor) getWhoSendTo(channelID string) (users []string, err error) {
@@ -80,4 +87,10 @@ func (ca *ChannelActor) getChannelUsers(channelID string) (result *sql.Rows, err
 	}
 
 	return result, err
+}
+
+func (ca *ChannelActor) Close() {
+	log.Warn("close channel actor")
+	ca.Redis.close()
+	ca.Mysql.close()
 }

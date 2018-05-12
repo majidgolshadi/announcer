@@ -1,31 +1,30 @@
 package output
 
 import (
-	"time"
 	log "github.com/sirupsen/logrus"
+	"time"
 )
 
-type cluster struct {
+type Cluster struct {
 	address []string
-	ticker          *time.Ticker
-	conn []Ejabberd
-	retry int
+	conn    []Ejabberd
+	retry   int
 }
 
-func NewClientCluster(address []string, retry int, opt *EjabberdClientOpt) (c *cluster ,err error) {
-	c = &cluster{
+func NewClientCluster(address []string, retry int, opt *EjabberdClientOpt) (c *Cluster, err error) {
+	c = &Cluster{
 		address: address,
-		retry: retry,
+		retry:   retry,
 	}
 
-	for _,host := range address {
+	for _, host := range address {
 		client, err := NewEjabberdClient(&EjabberdClientOpt{
-			Host: host,
-			Username: opt.Username,
-			Password: opt.Password,
-			PingInterval: opt.PingInterval,
+			Host:           host,
+			Username:       opt.Username,
+			Password:       opt.Password,
+			PingInterval:   opt.PingInterval,
 			ResourcePrefix: opt.ResourcePrefix,
-			Domain: opt.Domain,
+			Domain:         opt.Domain,
 		})
 
 		if err != nil {
@@ -43,19 +42,19 @@ func NewClientCluster(address []string, retry int, opt *EjabberdClientOpt) (c *c
 	return c, nil
 }
 
-func NewComponentCluster(address []string, retry int, opt *EjabberdComponentOpt) (c *cluster ,err error) {
-	c = &cluster{
+func NewComponentCluster(address []string, retry int, opt *EjabberdComponentOpt) (c *Cluster, err error) {
+	c = &Cluster{
 		address: address,
-		retry: retry,
+		retry:   retry,
 	}
 
-	for _,host := range address {
+	for _, host := range address {
 		com, err := NewEjabberdComponent(&EjabberdComponentOpt{
-			Host: host,
-			Name: opt.Name,
-			Secret: opt.Secret,
+			Host:         host,
+			Name:         opt.Name,
+			Secret:       opt.Secret,
 			PingInterval: opt.PingInterval,
-			Domain: opt.Domain,
+			Domain:       opt.Domain,
 		})
 
 		if err != nil {
@@ -73,7 +72,7 @@ func NewComponentCluster(address []string, retry int, opt *EjabberdComponentOpt)
 	return c, nil
 }
 
-func (c *cluster) ListenAndSend(rateLimit time.Duration, messages chan string) {
+func (c *Cluster) ListenAndSend(rateLimit time.Duration, messages chan string) {
 	sleepTime := time.Second / rateLimit
 	// For more that 1000000000 sleep time is zero
 	if sleepTime == 0 {
@@ -88,7 +87,7 @@ func (c *cluster) ListenAndSend(rateLimit time.Duration, messages chan string) {
 	}
 }
 
-func (c *cluster) sendWithRetry(msg string) {
+func (c *Cluster) sendWithRetry(msg string) {
 	for i := 1; i < c.retry; i++ {
 		for _, conn := range c.conn {
 			if err := conn.Send(msg); err == nil {
@@ -100,5 +99,12 @@ func (c *cluster) sendWithRetry(msg string) {
 		}
 		log.WithField("message", msg).Warn("retry to send message after ", i, " second...")
 		time.Sleep(time.Second * time.Duration(i))
+	}
+}
+
+func (c *Cluster) Close() {
+	log.Warn("close cluster connections...")
+	for _, con := range c.conn {
+		con.Close()
 	}
 }
