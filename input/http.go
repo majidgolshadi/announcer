@@ -29,8 +29,8 @@ func RunHttpServer(port string, inputChannel chan<- *logic.ChannelAct, inputUser
 			ctx.Error(API_NOT_FOUND_MESSAGE, fasthttp.StatusNotFound)
 		}
 
-		log.Infof("%s | %s | %d | %ds",
-			ctx.Method(), ctx.Path(), ctx.Response.Header.StatusCode(), time.Now().Sub(start))
+		log.Infof("%s | %s | %d | %fs",
+			ctx.Method(), ctx.Path(), ctx.Response.Header.StatusCode(), time.Now().Sub(start).Seconds())
 	})
 }
 

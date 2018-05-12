@@ -4,23 +4,20 @@ services:
     image: spotify/kafka
     ports:
       - "9092:9092"
+      - "2181:2181"
     environment:
-      ADVERTISED_HOST: 192.168.2.21
+      ADVERTISED_HOST: 192.168.90.29
       TOPICS: "test-topic"
       ADVERTISED_PORT: 9092
       ZK_CONNECT: zookeeper:2181
   ejabberd:
-    image: rroemhild/ejabberd
+    image: rroemhild/ejabberd:17.01
     ports:
+      - "9999:9999"
       - "8889:8889"
       - "5222:5222"
-    environment:
-      XMPP_DOMAIN: "example.de"
-      ERLANG_NODE: "ejabberd"
-      EJABBERD_SKIP_MODULES_UPDATE: "false"
-      EJABBERD_ADMINS: "admin@example.de admin2@example.de"
-      EJABBERD_USERS: "admin@example.de:password1234 admin2@example.de:pass1234"
-      Z: "Asia/Tehran"
+    volumes:
+      - ./integration_test/ejabberd:/opt/ejabberd/conf
   redis:
     image: redis
     ports:
@@ -32,3 +29,5 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: "123"
       MYSQL_DATABASE: "testDB"
+      MYSQL_USER: "test"
+      MYSQL_PASSWORD: "123"

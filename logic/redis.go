@@ -27,8 +27,10 @@ func (opt *RedisOpt) init() {
 	}
 
 	if opt.CheckInterval == 0 {
-		opt.CheckInterval = 5 * time.Second
+		opt.CheckInterval = 5
 	}
+
+	opt.CheckInterval = opt.CheckInterval * time.Second
 }
 
 func NewRedis(opt *RedisOpt) *redis {
@@ -51,7 +53,7 @@ func (r *redis) connect() (err error) {
 		Password: r.opt.Password,
 		DB:       r.opt.Database,
 		OnConnect: func(conn *redisCli.Conn) error {
-			log.Info("redis connection established")
+			log.Info("redis connection established to ", r.opt.Address)
 			return nil
 		},
 	})
@@ -64,7 +66,7 @@ func (r *redis) connect() (err error) {
 func (r *redis) keepConnectionAlive() {
 	for range r.checkConnTicker.C {
 		if !r.connStatus {
-			log.Info("try to connect to redis...")
+			log.Info("reconnect to redis ", r.opt.Address)
 			r.connect()
 		}
 
@@ -86,7 +88,7 @@ func (r *redis) HGet(key string, filed string) (string, error) {
 }
 
 func (r *redis) close() {
-	log.Info("close redis connections to ", r.opt.Address)
+	log.Warn("close redis connections to ", r.opt.Address)
 	r.checkConnTicker.Stop()
 
 	if r.conn != nil {

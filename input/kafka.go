@@ -7,6 +7,7 @@ import (
 	"github.com/Shopify/sarama"
 	"github.com/majidgolshadi/client-announcer/logic"
 	"github.com/wvanbergen/kafka/consumergroup"
+	log "github.com/sirupsen/logrus"
 	"math/rand"
 	"os"
 	"os/signal"
@@ -53,8 +54,10 @@ func (opt *KafkaConsumerOpt) init() error {
 	}
 
 	if opt.CommitOffsetInterval == 0 {
-		opt.CommitOffsetInterval = 5 * time.Second
+		opt.CommitOffsetInterval = 5
 	}
+
+	opt.CommitOffsetInterval = opt.CommitOffsetInterval * time.Second
 
 	return nil
 }
@@ -137,7 +140,7 @@ func (kc *KafkaConsumer) setupInterruptListener() {
 	signal.Notify(c, os.Interrupt)
 
 	<-c
-	println("Os interrupt signal received")
+	log.Warn("Os interrupt signal received")
 	kc.Close()
 }
 
@@ -150,6 +153,7 @@ func (kc *KafkaConsumer) tickOffsetCommitter() {
 }
 
 func (kc *KafkaConsumer) Close() {
+	log.Warn("close kafka consumer")
 	kc.commitTicker.Stop()
 
 	if kc.consumerGroup != nil {

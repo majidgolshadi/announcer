@@ -46,7 +46,6 @@ type Log struct {
 
 type Ejabberd struct {
 	ClusterNodes   string `toml:"cluster_nodes"`
-	DefaultCluster string `toml:"default_cluster"`
 	RateLimit      int    `toml:"rate_limit"`
 	SendRetry      int    `toml:"send_retry"`
 }
@@ -141,6 +140,8 @@ func main() {
 	mysql, err := logic.NewMysql(&logic.MysqlOpt{
 		Address:       cnf.Mysql.Address,
 		Database:      cnf.Mysql.DB,
+		Username: cnf.Mysql.Username,
+		Password: cnf.Mysql.Password,
 		CheckInterval: time.Duration(cnf.Mysql.CheckInterval),
 	})
 	if err != nil {
@@ -179,12 +180,12 @@ func main() {
 
 	go func() {
 		if err := kafkaConsumer.Listen(inputChannel, inputUser); err != nil {
-			log.WithField("error", err.Error()).Fatal("kafka consumer listening error")
+			log.WithField("error", err.Error()).Info("kafka consumer listening error")
 		}
 	}()
 
 	// Rest api
-	go input.RunHttpServer(cnf.HttpPort, inputChannel, inputUser)
+	input.RunHttpServer(cnf.HttpPort, inputChannel, inputUser)
 }
 
 // TODO: Add tag for any application log

@@ -42,8 +42,10 @@ func (opt *EjabberdComponentOpt) init() error {
 	}
 
 	if opt.PingInterval == 0 {
-		opt.PingInterval = 5 * time.Second
+		opt.PingInterval = 5
 	}
+
+	opt.PingInterval = opt.PingInterval * time.Second
 
 	return nil
 }
@@ -110,7 +112,7 @@ func (ec *ejabberdComponent) Send(msg string) error {
 }
 
 func (ec *ejabberdComponent) Close() {
-	log.Info("close component ", ec.opt.Name, " connection from", ec.opt.Host)
+	log.Warn("close component ", ec.opt.Name, " connection from", ec.opt.Host)
 	ec.checkConnTicker.Stop()
 
 	if ec.conn != nil {

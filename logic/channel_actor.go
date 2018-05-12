@@ -24,6 +24,7 @@ const UsersChannelUsernameQuery = `select member_username from ws_channel_member
 func (ca *ChannelActor) Listen(chanAct <-chan *ChannelAct, msg chan<- string) error {
 	ca.Redis.connectAndKeep()
 	if err := ca.Mysql.connect(); err != nil {
+		log.WithField("error", err.Error()).Error("mysql connection error")
 		return err
 	}
 

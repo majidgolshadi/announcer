@@ -42,8 +42,10 @@ func (opt *EjabberdClientOpt) init() error {
 	}
 
 	if opt.PingInterval == 0 {
-		opt.PingInterval = 5 * time.Second
+		opt.PingInterval = 5
 	}
+
+	opt.PingInterval = opt.PingInterval * time.Second
 
 	return nil
 }

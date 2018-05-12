@@ -2,6 +2,7 @@ package logic
 
 import (
 	"database/sql"
+	_ "github.com/go-sql-driver/mysql"
 	"errors"
 	"fmt"
 	log "github.com/sirupsen/logrus"
@@ -37,8 +38,10 @@ func (opt *MysqlOpt) init() error {
 	}
 
 	if opt.CheckInterval == 0 {
-		opt.CheckInterval = 5 * time.Second
+		opt.CheckInterval = 5
 	}
+
+	opt.CheckInterval = opt.CheckInterval * time.Second
 
 	return nil
 }
@@ -61,15 +64,19 @@ func (ms *mysql) connect() (err error) {
 	if ms.conn, err = sql.Open("mysql", dataSourceName); err != nil {
 		return err
 	}
+	log.Info("connect to mysql ", ms.opt.Address)
 
 	go ms.keepConnectionAlive()
-	return ms.conn.Ping()
+
+	err = ms.conn.Ping()
+	ms.connStatus = bool(err == nil)
+	return err
 }
 
 func (ms *mysql) keepConnectionAlive() {
 	for range ms.checkConnTicker.C {
 		if !ms.connStatus {
-			log.Info("try to connect to redis...")
+			log.Info("reconnect to mysql ", ms.opt.Address)
 			ms.connect()
 		}
 
@@ -87,7 +94,7 @@ func (ms *mysql) GetConnection() *sql.DB {
 }
 
 func (ms *mysql) close() {
-	log.Info("close mysql connections to ", ms.opt.Address)
+	log.Warn("close mysql connections to ", ms.opt.Address)
 	ms.checkConnTicker.Stop()
 
 	if ms.conn != nil {
