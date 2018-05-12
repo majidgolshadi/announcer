@@ -1,8 +1,6 @@
 package logic
 
-import (
-	"fmt"
-)
+import "github.com/majidgolshadi/client-announcer/output"
 
 type UserAct struct {
 	MessageTemplate string
@@ -12,8 +10,11 @@ type UserAct struct {
 type UserActor struct {
 }
 
-func (ua *UserActor) Listen(chanAct <-chan *UserAct, msg chan<- string) {
+func (ua *UserActor) Listen(chanAct <-chan *UserAct, msg chan<- *output.Msg) {
 	for rec := range chanAct {
-		msg <- fmt.Sprintf(rec.MessageTemplate, rec.Username)
+		msg <- &output.Msg{
+			Temp: rec.MessageTemplate,
+			User: rec.Username,
+		}
 	}
 }

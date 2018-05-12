@@ -2,7 +2,6 @@ package logic
 
 import (
 	"time"
-
 	redisCli "github.com/go-redis/redis"
 	log "github.com/sirupsen/logrus"
 )
@@ -52,6 +51,7 @@ func (r *redis) connect() (err error) {
 		Addr:     r.opt.Address,
 		Password: r.opt.Password,
 		DB:       r.opt.Database,
+		MaxRetries: 10,
 		OnConnect: func(conn *redisCli.Conn) error {
 			log.Info("redis connection established to ", r.opt.Address)
 			return nil
@@ -59,22 +59,15 @@ func (r *redis) connect() (err error) {
 	})
 
 	_, err = r.conn.Ping().Result()
-	r.connStatus = bool(err == nil)
 	return err
 }
 
 func (r *redis) keepConnectionAlive() {
 	for range r.checkConnTicker.C {
-		if !r.connStatus {
-			log.Info("reconnect to redis ", r.opt.Address)
-			r.connect()
-		}
-
 		if statusCmd := r.conn.Ping(); statusCmd.Err() != nil {
 			log.WithField("error", statusCmd.Err()).Warn("redis connection lost")
-
 			r.conn.Close()
-			r.connStatus = false
+			r.connect()
 		}
 	}
 }

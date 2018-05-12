@@ -64,27 +64,19 @@ func (ms *mysql) connect() (err error) {
 	if ms.conn, err = sql.Open("mysql", dataSourceName); err != nil {
 		return err
 	}
+
 	log.Info("connect to mysql ", ms.opt.Address)
 
 	go ms.keepConnectionAlive()
-
-	err = ms.conn.Ping()
-	ms.connStatus = bool(err == nil)
-	return err
+	return ms.conn.Ping()
 }
 
 func (ms *mysql) keepConnectionAlive() {
 	for range ms.checkConnTicker.C {
-		if !ms.connStatus {
-			log.Info("reconnect to mysql ", ms.opt.Address)
-			ms.connect()
-		}
-
 		if err := ms.conn.Ping(); err != nil {
 			log.WithField("error", err.Error()).Warn("Mysql connection lost")
-
 			ms.conn.Close()
-			ms.connStatus = false
+			ms.connect()
 		}
 	}
 }

@@ -1,0 +1,141 @@
+-- MySQL dump 10.13  Distrib 5.6.38, for Linux (x86_64)
+--
+-- Host: 192.168.208.125    Database: a2b4
+-- ------------------------------------------------------
+-- Server version	5.6.38-log
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
+--
+-- Table structure for table `ws_channel_data`
+--
+
+DROP TABLE IF EXISTS `ws_channel_data`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `ws_channel_data` (
+  `channel_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `channel_channelid` varchar(128) CHARACTER SET utf8 NOT NULL,
+  `channel_categoryid` int(10) unsigned NOT NULL,
+  `channel_link` varchar(64) NOT NULL DEFAULT '',
+  `channel_state` varchar(16) CHARACTER SET utf8 NOT NULL DEFAULT 'PENDING',
+  `channel_name` varchar(768) NOT NULL,
+  `channel_description` varchar(6000) NOT NULL,
+  `channel_avatarurl` varchar(512) CHARACTER SET utf8 NOT NULL,
+  `channel_avatarthumbnailurl` varchar(512) CHARACTER SET utf8 NOT NULL,
+  `channel_owner` varchar(64) CHARACTER SET utf8 NOT NULL,
+  `channel_flags` varchar(2000) CHARACTER SET utf8 NOT NULL DEFAULT '[]',
+  `channel_admins` varchar(6000) CHARACTER SET utf8 NOT NULL DEFAULT '[]',
+  `channel_replyallowed` tinyint(1) NOT NULL DEFAULT '0',
+  `channel_visible` tinyint(1) NOT NULL DEFAULT '1',
+  `channel_allow_registration` tinyint(1) NOT NULL DEFAULT '1',
+  `channel_members_count` int(10) NOT NULL DEFAULT '0',
+  `channel_message_perday_limit` int(11) NOT NULL DEFAULT '1000',
+  `channel_addmember_limit` int(10) unsigned NOT NULL DEFAULT '500',
+  `channel_addmember_count` int(10) unsigned NOT NULL DEFAULT '0',
+  `channel_displayorder` int(11) NOT NULL DEFAULT '0',
+  `channel_creationdate` datetime NOT NULL,
+  `channel_updatedate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`channel_id`),
+  KEY `channel_categoryid` (`channel_categoryid`),
+  KEY `channel_state` (`channel_state`),
+  KEY `channel_owner` (`channel_owner`),
+  KEY `channel_channelid` (`channel_channelid`),
+  KEY `channel_name` (`channel_name`(191)),
+  KEY `channel_description` (`channel_description`(191)),
+  KEY `channel_link` (`channel_link`)
+) ENGINE=InnoDB AUTO_INCREMENT=4003007 DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `ws_channel_data`
+--
+-- WHERE:  1 limit 10
+
+LOCK TABLES `ws_channel_data` WRITE;
+/*!40000 ALTER TABLE `ws_channel_data` DISABLE KEYS */;
+INSERT INTO `ws_channel_data` VALUES (1,'ABC123',0,'','DELETED','کانال تست','توضیح کانال تست','https://cdn111-fs2.soroush-hamrah.ir/static_file/14537068762074AhXQcSJvFIPxn7a61eKOLlpRYt0sM9Tq.png?','https://cdn111-fs2.soroush-hamrah.ir/static_file/14537068762074AhXQcSJvFIPxn7a61eKOLlpRYt0sM9Tq.png?','u02f5w6pu','[]','[\"u02f5w6pu\"]',1,0,1,0,1000,500,0,0,'2015-11-11 11:22:33','2018-02-26 10:33:19'),(4,'soroush',0,'soroush','REJECTED','تست','سروش','https://cdn111-fs2.soroush-hamrah.ir/static_file/14705678588025sHFPCTXNeMDwrguiUhlLYSO3dZyaAt96.jpg?','https://cdn111-fs2.soroush-hamrah.ir/static_file/14705678588025sHFPCTXNeMDwrguiUhlLYSO3dZyaAt96.thumbnail.jpg?','ukcomdoie','[]','[]',0,1,1,25,1000,500,0,0,'2016-08-07 15:33:15','2018-02-26 10:33:19'),(22,'channel_14478493731302_s6bpizv1fj',0,'','REJECTED','پیام های کاربران','پیام های کاربران','https://cdn112-fs2.soroush-hamrah.ir/static_file/145414427506060rAQJqFmuplKfi2zRVWPMZBvdgj3ehsG.png?','https://cdn112-fs2.soroush-hamrah.ir/static_file/145414427506060rAQJqFmuplKfi2zRVWPMZBvdgj3ehsG.png?','ugc8q30cc','[]','[\"ugc8q30cc\",\"uxsxbo9sk\"]',0,1,1,15,1000,500,0,0,'2015-11-18 15:52:53','2018-02-26 10:33:04'),(23,'ch23',0,'ch23','ACCEPTED','کانال شبکه تست','توضیح','https://cdn111-fs2.soroush-hamrah.ir/static_file/14479245344324aIwolpfnGSeC21QYbOEN5VuP46L9XFvB.png?','https://cdn111-fs2.soroush-hamrah.ir/static_file/14479245344324aIwolpfnGSeC21QYbOEN5VuP46L9XFvB.png?','u02f5w6pu','[]','[]',0,1,1,11,3,500,0,0,'2015-11-18 16:23:44','2018-02-26 10:33:19'),(24,'channel_14478513403006_udj6bhvewr',0,'','REJECTED','فدراسیون بسکتبال','فدراسیون بسکتبال توضیح','https://cdn111-fs2.soroush-hamrah.ir/static_file/14484384157996KAhWr6S7EcBT1uOksef8aImqtYQFD32J.jpg?','https://cdn111-fs2.soroush-hamrah.ir/static_file/14484384157996KAhWr6S7EcBT1uOksef8aImqtYQFD32J.jpg?','uxsxbo9sk','[]','[\"uxsxbo9sk\",\"ugc8q30cc\"]',1,0,1,18,1000,500,0,0,'2015-11-18 16:25:40','2018-02-26 10:33:19'),(26,'channel_14479149556071_smled6eytb',0,'','REJECTED','فوتبال از دریچه خبر','فوتبال از دریچه خبر','https://cdn111-fs2.soroush-hamrah.ir/static_file/14479242751221qzQR1BJNKtWcZ40pPaglbOIUxCdFhfX3.png?','https://cdn111-fs2.soroush-hamrah.ir/static_file/14479242751221qzQR1BJNKtWcZ40pPaglbOIUxCdFhfX3.png?','uxsxbo9sk','[]','[\"uxsxbo9sk\",\"ug9wgeie7\",\"ugc8q30cc\"]',0,1,1,17,1000,500,0,0,'2015-11-19 10:05:55','2018-02-26 10:33:19'),(28,'channel_1448350803184_itszwjy918',6,'','REJECTED','رد و بدل پیام','رد و بدل پیام','https://cdn112-fs2.soroush-hamrah.ir/static_file/14494923188831ONa7pA6WiewlnbRGvgCHcLtyfSDP14hs.jpg?','https://cdn112-fs2.soroush-hamrah.ir/static_file/14494923188831ONa7pA6WiewlnbRGvgCHcLtyfSDP14hs.jpg?','ug9wgeie7','[]','[\"ug9wgeie7\",\"uxsxbo9sk\"]',1,1,1,12,1000,500,0,0,'2015-11-24 11:10:03','2018-02-26 10:33:04'),(31,'channel_14486939814343_b4jgxzunk8',6,'','REJECTED','تست feedback','تست feedback','https://cdn112-fs2.soroush-hamrah.ir/static_file/14486939781696txW7LZIvAuODcz05CNw1YJ8jHT9gnMfi.jpg?','https://cdn112-fs2.soroush-hamrah.ir/static_file/14486939781696txW7LZIvAuODcz05CNw1YJ8jHT9gnMfi.jpg?','ug9wgeie7','[]','[\"ug9wgeie7\"]',1,1,1,15,1000,500,0,0,'2015-11-28 10:29:41','2018-02-26 10:33:04'),(32,'channel_14487043479559_fzw5qdfou2',0,'channel_14487043479559_fzw5qdfou2','ACCEPTED','AbbasTestChannel','Test','testUrl','testAvatarUrl','uwl24vsa1','[]','[\"uft4fnio7\",\"uwl24vsa1\"]',0,1,1,3,1000,500,0,0,'2015-11-28 13:22:27','2017-07-27 05:18:21'),(33,'channel_14487149654099_tu1rawwtej',0,'channel_14487149654099_tu1rawwtej','ACCEPTED','AbbasTestChannel','Test','testUrl','testAvatarUrl','uwl24vsa1','[]','[\"uft4fnio7\",\"uwl24vsa1\"]',0,1,1,2,1000,500,0,0,'2015-11-28 16:19:25','2017-07-27 05:18:21');
+/*!40000 ALTER TABLE `ws_channel_data` ENABLE KEYS */;
+UNLOCK TABLES;
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+
+-- Dump completed on 2018-05-12 18:00:54
+
+
+-- MySQL dump 10.13  Distrib 5.6.38, for Linux (x86_64)
+--
+-- Host: 192.168.208.125    Database: a2b4
+-- ------------------------------------------------------
+-- Server version	5.6.38-log
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
+--
+-- Table structure for table `ws_channel_members`
+--
+
+DROP TABLE IF EXISTS `ws_channel_members`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `ws_channel_members` (
+  `member_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `member_channelid` int(11) NOT NULL,
+  `member_username` varchar(64) NOT NULL,
+  `member_role` varchar(32) NOT NULL,
+  `member_addedby` varchar(64) NOT NULL,
+  `member_adddate` datetime NOT NULL,
+  `member_updatedate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`member_id`),
+  KEY `member_channelid` (`member_channelid`),
+  KEY `member_username` (`member_username`),
+  KEY `member_role` (`member_role`)
+) ENGINE=InnoDB AUTO_INCREMENT=240334027 DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `ws_channel_members`
+--
+-- WHERE:  1 limit 10
+
+LOCK TABLES `ws_channel_members` WRITE;
+/*!40000 ALTER TABLE `ws_channel_members` DISABLE KEYS */;
+INSERT INTO `ws_channel_members` VALUES (39,22,'ugc8q30cc','ADMIN','ugc8q30cc','2015-11-18 15:52:53','2015-11-18 12:22:53'),(44,26,'uxsxbo9sk','ADMIN','uxsxbo9sk','2015-11-19 10:05:55','2015-11-19 06:35:55'),(122,24,'ufdrt2nj7','VISITOR','ufdrt2nj7','2015-11-21 15:18:20','2015-11-21 11:48:20'),(137,24,'ub4wvdgb7','VISITOR','ub4wvdgb7','2015-11-23 09:33:20','2015-11-23 06:03:20'),(139,26,'ub4wvdgb7','VISITOR','ub4wvdgb7','2015-11-23 09:33:25','2015-11-23 06:03:25'),(140,22,'ub4wvdgb7','VISITOR','ub4wvdgb7','2015-11-23 09:33:30','2015-11-23 06:03:30'),(142,24,'uft4fnio7','VISITOR','uft4fnio7','2015-11-23 11:38:23','2015-11-23 08:08:23'),(150,22,'uho4trgy9','VISITOR','uho4trgy9','2015-11-24 11:00:30','2015-11-24 07:30:30'),(152,28,'ug9wgeie7','ADMIN','ug9wgeie7','2015-11-24 11:10:03','2015-11-24 07:40:03'),(155,24,'uho4trgy9','VISITOR','uho4trgy9','2015-11-24 14:01:37','2015-11-24 10:31:37');
+/*!40000 ALTER TABLE `ws_channel_members` ENABLE KEYS */;
+UNLOCK TABLES;
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+
+-- Dump completed on 2018-05-12 18:20:08

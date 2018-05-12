@@ -98,7 +98,7 @@ func main() {
 
 	inputChannel := make(chan *logic.ChannelAct, cnf.InputBuffer)
 	inputUser := make(chan *logic.UserAct, cnf.InputBuffer)
-	out := make(chan string, cnf.OutputBuffer)
+	out := make(chan *output.Msg, cnf.OutputBuffer)
 
 	// Output part
 	var cluster *output.Cluster
@@ -162,27 +162,30 @@ func main() {
 
 	// Input part
 	// Kafka consumer
-	zookeeper, zNode := kazoo.ParseConnectionString(cnf.Kafka.Zookeeper)
-	kafkaConsumer, err := input.NewKafkaConsumer(&input.KafkaConsumerOpt{
-		Zookeeper:            zookeeper,
-		ZNode:                zNode,
-		GroupName:            cnf.Kafka.GroupName,
-		CommitOffsetInterval: time.Duration(cnf.Kafka.CommitOffsetInterval),
-		Topics:               strings.Split(cnf.Kafka.Topics, ","),
-		ReadBufferSize:       cnf.Kafka.Buffer,
-	})
+	var kafkaConsumer *input.KafkaConsumer
+	if cnf.Kafka.Zookeeper != "" {
+		zookeeper, zNode := kazoo.ParseConnectionString(cnf.Kafka.Zookeeper)
+		kafkaConsumer, err = input.NewKafkaConsumer(&input.KafkaConsumerOpt{
+			Zookeeper:            zookeeper,
+			ZNode:                zNode,
+			GroupName:            cnf.Kafka.GroupName,
+			CommitOffsetInterval: time.Duration(cnf.Kafka.CommitOffsetInterval),
+			Topics:               strings.Split(cnf.Kafka.Topics, ","),
+			ReadBufferSize:       cnf.Kafka.Buffer,
+		})
 
-	if err != nil {
-		log.WithField("error", err.Error()).Fatal("init kafka consumer failed")
-	}
+		defer kafkaConsumer.Close()
 
-	defer kafkaConsumer.Close()
-
-	go func() {
-		if err := kafkaConsumer.Listen(inputChannel, inputUser); err != nil {
-			log.WithField("error", err.Error()).Info("kafka consumer listening error")
+		if err != nil {
+			log.WithField("error", err.Error()).Fatal("init kafka consumer failed")
 		}
-	}()
+
+		go func() {
+			if err := kafkaConsumer.Listen(inputChannel, inputUser); err != nil {
+				log.WithField("error", err.Error()).Fatal("kafka consumer listening error")
+			}
+		}()
+	}
 
 	// Rest api
 	input.RunHttpServer(cnf.HttpPort, inputChannel, inputUser)
@@ -199,10 +202,6 @@ func initLogService(logConfig Log) {
 		log.SetLevel(log.ErrorLevel)
 	default:
 		log.SetLevel(log.WarnLevel)
-	}
-
-	if logConfig.Format == "json" {
-		log.SetFormatter(&log.JSONFormatter{})
 	}
 
 	switch logConfig.Format {

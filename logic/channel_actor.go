@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	log "github.com/sirupsen/logrus"
+	"github.com/majidgolshadi/client-announcer/output"
 )
 
 type ChannelAct struct {
@@ -21,7 +22,7 @@ const SoroushChannelId = "officialsoroushchannel"
 const ChannelIDQuery = `select channel_id from ws_channel_data where channel_channelid="%s"`
 const UsersChannelUsernameQuery = `select member_username from ws_channel_members where member_channelid="%s"`
 
-func (ca *ChannelActor) Listen(chanAct <-chan *ChannelAct, msg chan<- string) error {
+func (ca *ChannelActor) Listen(chanAct <-chan *ChannelAct, msgChan chan<- *output.Msg) error {
 	ca.Redis.connectAndKeep()
 	if err := ca.Mysql.connect(); err != nil {
 		log.WithField("error", err.Error()).Error("mysql connection error")
@@ -36,8 +37,11 @@ func (ca *ChannelActor) Listen(chanAct <-chan *ChannelAct, msg chan<- string) er
 			continue
 		}
 
-		for user := range users {
-			msg <- fmt.Sprintf(rec.MessageTemplate, user)
+		for _,user := range users {
+			msgChan <- &output.Msg{
+				Temp: rec.MessageTemplate,
+				User: user,
+			}
 		}
 	}
 
@@ -51,10 +55,10 @@ func (ca *ChannelActor) getWhoSendTo(channelID string) (users []string, err erro
 	}
 
 	rowUsers, err := ca.getChannelUsers(channelID)
-	defer rowUsers.Close()
 	if err != nil {
-		return nil, err
+		return []string{}, err
 	}
+	defer rowUsers.Close()
 
 	channelUserCount := 0
 	var onlineUsers []string
@@ -71,7 +75,12 @@ func (ca *ChannelActor) getWhoSendTo(channelID string) (users []string, err erro
 		}
 	}
 
-	log.WithFields(log.Fields{"channel_users": channelUserCount, "online": len(onlineUsers), "channel_id": channelID}).Debug("channel users")
+	log.WithFields(log.Fields{
+		"channel_users": channelUserCount,
+		"online": len(onlineUsers),
+		"channel_id": channelID}).
+	Info("channel users")
+
 	return onlineUsers, nil
 }
 

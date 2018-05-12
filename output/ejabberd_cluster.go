@@ -11,6 +11,11 @@ type Cluster struct {
 	retry   int
 }
 
+type Msg struct {
+	Temp string
+	User string
+}
+
 func NewClientCluster(address []string, retry int, opt *EjabberdClientOpt) (c *Cluster, err error) {
 	c = &Cluster{
 		address: address,
@@ -72,7 +77,7 @@ func NewComponentCluster(address []string, retry int, opt *EjabberdComponentOpt)
 	return c, nil
 }
 
-func (c *Cluster) ListenAndSend(rateLimit time.Duration, messages chan string) {
+func (c *Cluster) ListenAndSend(rateLimit time.Duration, messages chan *Msg) {
 	sleepTime := time.Second / rateLimit
 	// For more that 1000000000 sleep time is zero
 	if sleepTime == 0 {
@@ -87,11 +92,10 @@ func (c *Cluster) ListenAndSend(rateLimit time.Duration, messages chan string) {
 	}
 }
 
-func (c *Cluster) sendWithRetry(msg string) {
+func (c *Cluster) sendWithRetry(msg *Msg) {
 	for i := 1; i < c.retry; i++ {
 		for _, conn := range c.conn {
 			if err := conn.Send(msg); err == nil {
-				log.WithField("message", msg).Debug("message sent")
 				return
 			} else {
 				continue
