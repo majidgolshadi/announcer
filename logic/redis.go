@@ -1,9 +1,9 @@
 package logic
 
 import (
-	"time"
 	redisCli "github.com/go-redis/redis"
 	log "github.com/sirupsen/logrus"
+	"time"
 )
 
 type redis struct {
@@ -48,9 +48,9 @@ func (r *redis) connectAndKeep() {
 
 func (r *redis) connect() (err error) {
 	r.conn = redisCli.NewClient(&redisCli.Options{
-		Addr:     r.opt.Address,
-		Password: r.opt.Password,
-		DB:       r.opt.Database,
+		Addr:       r.opt.Address,
+		Password:   r.opt.Password,
+		DB:         r.opt.Database,
 		MaxRetries: 10,
 		OnConnect: func(conn *redisCli.Conn) error {
 			log.Info("redis connection established to ", r.opt.Address)

@@ -116,6 +116,6 @@ func (ec *ejabberdClient) Send(msg *Msg) error {
 // We don't have connection close method so we stop ticker
 // every inactive connection will be close every "PingInterval" time with ejabberd
 func (ec *ejabberdClient) Close() {
-	log.Info("close client connection ", ec.getClientName(), " from ", ec.opt.Host)
+	log.Warn("close client connection ", ec.getClientName(), " from ", ec.opt.Host)
 	ec.checkConnTicker.Stop()
 }

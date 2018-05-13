@@ -45,9 +45,9 @@ type Log struct {
 }
 
 type Ejabberd struct {
-	ClusterNodes   string `toml:"cluster_nodes"`
-	RateLimit      int    `toml:"rate_limit"`
-	SendRetry      int    `toml:"send_retry"`
+	ClusterNodes string `toml:"cluster_nodes"`
+	RateLimit    int    `toml:"rate_limit"`
+	SendRetry    int    `toml:"send_retry"`
 }
 
 type Client struct {
@@ -140,8 +140,8 @@ func main() {
 	mysql, err := logic.NewMysql(&logic.MysqlOpt{
 		Address:       cnf.Mysql.Address,
 		Database:      cnf.Mysql.DB,
-		Username: cnf.Mysql.Username,
-		Password: cnf.Mysql.Password,
+		Username:      cnf.Mysql.Username,
+		Password:      cnf.Mysql.Password,
 		CheckInterval: time.Duration(cnf.Mysql.CheckInterval),
 	})
 	if err != nil {

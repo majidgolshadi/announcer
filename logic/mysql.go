@@ -2,9 +2,9 @@ package logic
 
 import (
 	"database/sql"
-	_ "github.com/go-sql-driver/mysql"
 	"errors"
 	"fmt"
+	_ "github.com/go-sql-driver/mysql"
 	log "github.com/sirupsen/logrus"
 	"time"
 )

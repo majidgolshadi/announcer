@@ -101,6 +101,7 @@ func (c *Cluster) sendWithRetry(msg *Msg) {
 				continue
 			}
 		}
+
 		log.WithField("message", msg).Warn("retry to send message after ", i, " second...")
 		time.Sleep(time.Second * time.Duration(i))
 	}
