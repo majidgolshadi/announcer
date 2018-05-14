@@ -69,7 +69,8 @@ type Redis struct {
 	ClusterNodes  string `toml:"cluster_nodes"`
 	Password      string `toml:"password"`
 	DB            int    `toml:"db"`
-	HashTable     string `toml:"hash_table"`
+	SetPrefix     string `toml:"set_prefix"`
+	OfflineHTable string `toml:"offline_hash_table"`
 	CheckInterval int    `toml:"check_interval"`
 }
 
@@ -97,8 +98,13 @@ func main() {
 	}()
 
 	inputChannel := make(chan *logic.ChannelAct, cnf.InputBuffer)
+	defer close(inputChannel)
+
 	inputUser := make(chan *logic.UserAct, cnf.InputBuffer)
+	defer close(inputUser)
+
 	out := make(chan *output.Msg, cnf.OutputBuffer)
+	defer close(out)
 
 	// Output part
 	var cluster *output.Cluster
@@ -130,14 +136,19 @@ func main() {
 	go cluster.ListenAndSend(time.Duration(cnf.Ejabberd.RateLimit), out)
 
 	// Logic part
-	redis := logic.NewRedis(&logic.RedisOpt{
-		Address:       cnf.Redis.ClusterNodes,
-		Password:      cnf.Redis.Password,
-		Database:      cnf.Redis.DB,
-		CheckInterval: time.Duration(cnf.Redis.CheckInterval),
+	redis, err := logic.NewRedisUserDataStore(&logic.RedisOpt{
+		Address:          cnf.Redis.ClusterNodes,
+		Password:         cnf.Redis.Password,
+		Database:         cnf.Redis.DB,
+		SetPrefix:        cnf.Redis.SetPrefix,
+		OfflineHashTable: cnf.Redis.OfflineHTable,
+		CheckInterval:    time.Duration(cnf.Redis.CheckInterval),
 	})
+	if err != nil {
+		log.WithField("error", err.Error()).Fatal("redis connection failed")
+	}
 
-	mysql, err := logic.NewMysql(&logic.MysqlOpt{
+	mysql, err := logic.NewMysqlChannelDataStore(&logic.MysqlOpt{
 		Address:       cnf.Mysql.Address,
 		Database:      cnf.Mysql.DB,
 		Username:      cnf.Mysql.Username,
@@ -149,9 +160,8 @@ func main() {
 	}
 
 	chActor := &logic.ChannelActor{
-		Mysql:          mysql,
-		Redis:          redis,
-		RedisHashTable: cnf.Redis.HashTable,
+		ChannelDataStore: mysql,
+		UserDataStore:    redis,
 	}
 
 	go chActor.Listen(inputChannel, out)

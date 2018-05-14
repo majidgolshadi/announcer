@@ -9,8 +9,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/wvanbergen/kafka/consumergroup"
 	"math/rand"
-	"os"
-	"os/signal"
 	"time"
 )
 
@@ -41,8 +39,8 @@ func (opt *KafkaConsumerOpt) init() error {
 		opt.Zookeeper = []string{"127.0.0.1:2181"}
 	}
 
-	if opt.ZNode == "" {
-		opt.ZNode = "/"
+	if opt.ZNode == "/" {
+		opt.ZNode = ""
 	}
 
 	if opt.GroupName == "" {
@@ -83,7 +81,7 @@ func NewKafkaConsumer(option *KafkaConsumerOpt) (*KafkaConsumer, error) {
 	kc.config = consumergroup.NewConfig()
 
 	kc.config.ChannelBufferSize = option.ReadBufferSize
-	kc.config.Offsets.Initial = sarama.OffsetOldest
+	kc.config.Offsets.Initial = sarama.OffsetNewest
 	kc.config.Zookeeper.Chroot = option.ZNode
 	kc.config.ChannelBufferSize = option.ReadBufferSize
 
@@ -101,7 +99,6 @@ func (kc *KafkaConsumer) Listen(inputChannel chan<- *logic.ChannelAct, inputUser
 		return err
 	}
 
-	go kc.setupInterruptListener()
 	go kc.tickOffsetCommitter()
 
 	for message := range kc.consumerGroup.Messages() {
@@ -133,15 +130,6 @@ func (kc *KafkaConsumer) Listen(inputChannel chan<- *logic.ChannelAct, inputUser
 	}
 
 	return nil
-}
-
-func (kc *KafkaConsumer) setupInterruptListener() {
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-
-	<-c
-	log.Warn("Os interrupt signal received")
-	kc.Close()
 }
 
 func (kc *KafkaConsumer) tickOffsetCommitter() {

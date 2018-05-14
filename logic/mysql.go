@@ -24,6 +24,9 @@ type MysqlOpt struct {
 	CheckInterval time.Duration
 }
 
+const ChannelIDQuery = `select channel_id from ws_channel_data where channel_channelid="%s"`
+const UsersChannelUsernameQuery = `select member_username from ws_channel_members where member_channelid="%s"`
+
 func (opt *MysqlOpt) init() error {
 	if opt.Database == "" {
 		return errors.New("database name does not set")
@@ -46,15 +49,21 @@ func (opt *MysqlOpt) init() error {
 	return nil
 }
 
-func NewMysql(opt *MysqlOpt) (*mysql, error) {
+func NewMysqlChannelDataStore(opt *MysqlOpt) (ChannelDataStore, error) {
 	if err := opt.init(); err != nil {
 		return nil, err
 	}
 
-	return &mysql{
+	ms := &mysql{
 		opt:             opt,
 		checkConnTicker: time.NewTicker(opt.CheckInterval),
-	}, nil
+	}
+
+	if err := ms.connect(); err != nil {
+		return nil, err
+	}
+
+	return ms, nil
 }
 
 func (ms *mysql) connect() (err error) {
@@ -81,11 +90,45 @@ func (ms *mysql) keepConnectionAlive() {
 	}
 }
 
-func (ms *mysql) GetConnection() *sql.DB {
-	return ms.conn
+func (ms *mysql) GetChannelMembers(channelID string) (username <-chan string, err error) {
+	usernameChan := make(chan string)
+
+	row := ms.conn.QueryRow(fmt.Sprintf(ChannelIDQuery, channelID))
+	if row == nil {
+		return nil, errors.New("channel not found")
+	}
+
+	var id string
+	if err := row.Scan(&id); err != nil {
+		return nil, err
+	}
+
+	// unfortunately return method directly make result untrustable
+	rows, err := ms.conn.Query(fmt.Sprintf(UsersChannelUsernameQuery, id))
+	if err != nil {
+		return nil, err
+	}
+
+	go func() {
+		var username string
+		for rows.Next() {
+			if err := rows.Scan(&username); err != nil {
+				log.Error("scan mysql row error: ", err.Error())
+				continue
+			}
+
+			usernameChan <- username
+		}
+
+		rows.Close()
+		close(usernameChan)
+	}()
+
+	return usernameChan, nil
+
 }
 
-func (ms *mysql) close() {
+func (ms *mysql) Close() {
 	log.Warn("close mysql connections to ", ms.opt.Address)
 	ms.checkConnTicker.Stop()
 

@@ -1,6 +1,7 @@
 package logic
 
 import (
+	"errors"
 	redisCli "github.com/go-redis/redis"
 	log "github.com/sirupsen/logrus"
 	"time"
@@ -14,13 +15,19 @@ type redis struct {
 }
 
 type RedisOpt struct {
-	Address       string
-	Password      string
-	Database      int
-	CheckInterval time.Duration
+	Address          string
+	Password         string
+	Database         int
+	CheckInterval    time.Duration
+	SetPrefix        string
+	OfflineHashTable string
 }
 
-func (opt *RedisOpt) init() {
+func (opt *RedisOpt) init() error {
+	if opt.SetPrefix == "" {
+		return errors.New("set prefix is empty")
+	}
+
 	if opt.Address == "" {
 		opt.Address = "127.0.0.1:6379"
 	}
@@ -30,15 +37,22 @@ func (opt *RedisOpt) init() {
 	}
 
 	opt.CheckInterval = opt.CheckInterval * time.Second
+
+	return nil
 }
 
-func NewRedis(opt *RedisOpt) *redis {
-	opt.init()
+func NewRedisUserDataStore(opt *RedisOpt) (UserDataStore, error) {
+	if err := opt.init(); err != nil {
+		return nil, err
+	}
 
-	return &redis{
+	r := &redis{
 		opt:             opt,
 		checkConnTicker: time.NewTicker(opt.CheckInterval),
 	}
+
+	go r.connectAndKeep()
+	return r, nil
 }
 
 func (r *redis) connectAndKeep() {
@@ -72,15 +86,38 @@ func (r *redis) keepConnectionAlive() {
 	}
 }
 
-func (r *redis) HKeys(HTable string) ([]string, error) {
-	return r.conn.HKeys(HTable).Result()
+func (r *redis) GetAllOnlineUsers() (<-chan string, error) {
+	usersChan := make(chan string)
+	ips, err := r.conn.Keys(r.opt.SetPrefix).Result()
+	if err != nil {
+		return nil, err
+	}
+
+	go func() {
+		for _, ip := range ips {
+			members, _ := r.conn.SMembers(ip).Result()
+			for _, member := range members {
+				usersChan <- member
+			}
+		}
+
+		close(usersChan)
+	}()
+
+	return usersChan, nil
 }
 
-func (r *redis) HGet(key string, filed string) (string, error) {
-	return r.conn.HGet(key, filed).Result()
+func (r *redis) IsHeOnline(username string) bool {
+	result, _ := r.conn.Get(username).Result()
+	return result != ""
 }
 
-func (r *redis) close() {
+func (r *redis) IsHeOffline(username string) bool {
+	result, _ := r.conn.HGet(r.opt.OfflineHashTable, username).Result()
+	return result != ""
+}
+
+func (r *redis) Close() {
 	log.Warn("close redis connections to ", r.opt.Address)
 	r.checkConnTicker.Stop()
 
