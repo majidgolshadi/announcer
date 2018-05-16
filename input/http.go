@@ -25,6 +25,8 @@ func RunHttpServer(port string, inputChannel chan<- *logic.ChannelAct, inputUser
 			v1AnnounceChannelHandler(ctx, inputChannel)
 		case "/v1/announce/user":
 			v1AnnounceUserHandler(ctx, inputUser)
+		case "/v1/announce/users":
+			v1AnnounceUsersHandler(ctx, inputUser)
 		default:
 			ctx.Error(API_NOT_FOUND_MESSAGE, fasthttp.StatusNotFound)
 		}
@@ -96,6 +98,44 @@ func v1AnnounceUserHandler(ctx *fasthttp.RequestCtx, inputUser chan<- *logic.Use
 		MessageTemplate: string(msgTmp),
 		Username:        input.Username,
 	}
+
+	ctx.SetStatusCode(http.StatusOK)
+}
+
+type announceUsersRequest struct {
+	Message  string `json:"message" binding:"required"`
+	Usernames []string `json:"usernames" binding:"required"`
+}
+
+func v1AnnounceUsersHandler(ctx *fasthttp.RequestCtx, inputUser chan<- *logic.UserAct) {
+	if string(ctx.Method()) != "POST" {
+		ctx.Error(API_NOT_FOUND_MESSAGE, fasthttp.StatusNotFound)
+		return
+	}
+
+	var input announceUsersRequest
+	if err := json.Unmarshal(ctx.Request.Body(), &input); err != nil {
+		log.WithField("bad request", ctx.Request.Body()).Error()
+		ctx.SetStatusCode(fasthttp.StatusBadRequest)
+		return
+	}
+
+	msgTmp, err := base64.StdEncoding.DecodeString(input.Message)
+	if err != nil {
+		ctx.SetStatusCode(fasthttp.StatusBadRequest)
+		ctx.SetBody([]byte(err.Error()))
+		return
+	}
+
+	go func() {
+		messageTemplate := string(msgTmp)
+		for _, username := range input.Usernames {
+			inputUser <- &logic.UserAct{
+				MessageTemplate: messageTemplate,
+				Username: username,
+			}
+		}
+	}()
 
 	ctx.SetStatusCode(http.StatusOK)
 }

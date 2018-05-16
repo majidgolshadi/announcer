@@ -68,6 +68,7 @@ Rest APIs
 |---|----|-----------|
 |/v1/announce/channel|POST|send channel message to that channel online members|
 |/v1/announce/user|POST|send a message to user|
+|/v1/announce/users|POST|send a message to users|
 
 Samples
 -------
@@ -97,7 +98,7 @@ In order to send a message to **all online users** you need to set channel_id **
 ```json
 {
     "username": "USERNAME",
-    "message": "ENCODE_MESSAGE_TO_BASE64"
+    "message": "BASE64_ENCODE_MESSAGE"
 }
 ```
 Message will be send to specific user without any check that is he online or not
@@ -107,9 +108,26 @@ sample message before base64 encoding:
 <message xml:lang='en' to='%s' type='chat' id='ID_NUMBER' xmlns='jabber:client'><body>MESSAGE_CONTENT</body><body xml:lang='REPLY_ON_THREAD_ID'>989198872580</body><body xml:lang='MAJOR_TYPE'>SIMPLE_CHAT</body><body xml:lang='MINOR_TYPE'>TEXT</body><body xml:lang='REPLY_ON_MESSAGE_ID'>15219732781131af24fc1zwf</body><body xml:lang='SEND_TIME_IN_GMT'>1521973339583</body></message>
 ```
 
+**Announce users message:**
+**POST** request **/v1/announce/users** with json data like
+```json
+{
+    "usernames": ["USERNAME_1", ..., "USERNAME_N"],
+    "message": "BASE64_ENCODE_MESSAGE"
+}
+```
+Message will be send to specific user without any check that is he online or not
+
+sample message before base64 encoding:
+```xml
+<message xml:lang='en' to='%s' type='chat' id='ID_NUMBER' xmlns='jabber:client'><body>MESSAGE_CONTENT</body><body xml:lang='REPLY_ON_THREAD_ID'>989198872580</body><body xml:lang='MAJOR_TYPE'>SIMPLE_CHAT</body><body xml:lang='MINOR_TYPE'>TEXT</body><body xml:lang='REPLY_ON_MESSAGE_ID'>15219732781131af24fc1zwf</body><body xml:lang='SEND_TIME_IN_GMT'>1521973339583</body></message>
+```
+
+
 Kafka APIs
 ----------
 message structures are like rest api
+
 connection handling
 -------------------
 **Redis**
@@ -143,13 +161,13 @@ Debugging
 ---------
 Debugging rest APIs
 
-- http://<SERVER_IP>:<debug_port>/debug/pprof/goroutine
-- http://<SERVER_IP>:<debug_port>/debug/pprof/heap
-- http://<SERVER_IP>:<debug_port>/debug/pprof/threadcreate
-- http://<SERVER_IP>:<debug_port>/debug/pprof/block
-- http://<SERVER_IP>:<debug_port>/debug/pprof/mutex
-- http://<SERVER_IP>:<debug_port>/debug/pprof/profile
-- http://<SERVER_IP>:<debug_port>/debug/pprof/trace?seconds=5
+- http://`<SERVER_IP>:<debug_port>`/debug/pprof/goroutine
+- http://`<SERVER_IP>:<debug_port>`/debug/pprof/heap
+- http://`<SERVER_IP>:<debug_port>`/debug/pprof/threadcreate
+- http://`<SERVER_IP>:<debug_port>`/debug/pprof/block
+- http://`<SERVER_IP>:<debug_port>`/debug/pprof/mutex
+- http://`<SERVER_IP>:<debug_port>`/debug/pprof/profile
+- http://`<SERVER_IP>:<debug_port>`/debug/pprof/trace?seconds=5
 
 Call `http://<SERVER_IP>:<debug_port>/debug/pprof/trace?seconds=5` to get 5 second of application trace file and then you can see application trace. With
 `go tool trace <DOWNLOADED_FILE_PATH>` command you can see what's happen in application on that period of time
