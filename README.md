@@ -113,21 +113,47 @@ message structures are like rest api
 connection handling
 -------------------
 **Redis**
-Connection to redis server will be check every "check_interval" second.
-If we lost our connection we will discard fetch data from that till connection establish again
+Connection will be check every "check_interval" second.
+If connection lost it will discard fetch data from that till connection establish again
 
-**Ejabberd Component**
-Based on component "ping_interval" configuration; send ping to end server every "ping_interval" second
+**Mysql**
+Connection will be check every "check_interval" second.
+If connection lost it try to connect to again on "check_interval".
 
-**Ejabberd Client**
-Based on component "ping_interval" configuration; send ping to end server every "ping_interval" second
+**Ejabberd Client** and **Ejabberd Component**
+Based on "ping_interval" configuration; send ping to keep connection alive every "ping_interval" second.
+If the connection lost system try to reconnect to
 
-**Ejabberd connections**
-On send time we check that if they are available or not
-if lost a connection we will remove that form available connection and when connection numbers goes to 0
-we try to connect to all ejabberd nodes again
+Redis Data Model
+----------------
+Online users:
+```
+<USERNAME> <ONLINE.SERVER.IP.ADDRESS>
+```
+Each server online users is store in set type data. we use these data to fetch all online users
+```
+<ONLINE.SERVER.IP.ADDRESS> [<USERNAME1> ... <USERNAME_N>]
+```
+Offline users:
+```
+<OFFLINE_HASHTABLE> <USERNAME> <TIME_STAMP_MILISECOND>
+```
 
 Debugging
 ---------
+Debugging rest APIs
+
+- http://<SERVER_IP>:<debug_port>/debug/pprof/goroutine
+- http://<SERVER_IP>:<debug_port>/debug/pprof/heap
+- http://<SERVER_IP>:<debug_port>/debug/pprof/threadcreate
+- http://<SERVER_IP>:<debug_port>/debug/pprof/block
+- http://<SERVER_IP>:<debug_port>/debug/pprof/mutex
+- http://<SERVER_IP>:<debug_port>/debug/pprof/profile
+- http://<SERVER_IP>:<debug_port>/debug/pprof/trace?seconds=5
+
 Call `http://<SERVER_IP>:<debug_port>/debug/pprof/trace?seconds=5` to get 5 second of application trace file and then you can see application trace. With
 `go tool trace <DOWNLOADED_FILE_PATH>` command you can see what's happen in application on that period of time
+
+Call `http://<SERVER_IP>:<debug_port>/debug/pprof/profile` to get service profile and then run `go tool pprof <DOWNLOADED_FILE_PATH>` command go see more details about application processes
+
+To get more information you can see [How to use pprof](https://www.integralist.co.uk/posts/profiling-go/) article

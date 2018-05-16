@@ -77,6 +77,7 @@ func NewComponentCluster(address []string, retry int, opt *EjabberdComponentOpt)
 	return c, nil
 }
 
+// Based on announcer usage it will be drop a message that it can't send, after retry on all connections and pause time
 func (c *Cluster) ListenAndSend(rateLimit time.Duration, messages chan *Msg) {
 	sleepTime := time.Second / rateLimit
 	// For more that 1000000000 sleep time is zero
