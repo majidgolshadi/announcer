@@ -1,19 +1,29 @@
 version: '3'
 services:
+  zookeeper:
+    image: wurstmeister/zookeeper
+    ports:
+      - "2181:2181"
   kafka:
-    image: spotify/kafka
+    image: wurstmeister/kafka
     ports:
       - "9092:9092"
+    depends_on:
+      - zookeeper
     environment:
-      ADVERTISED_HOST: 192.168.90.29
-      TOPICS: "test-topic"
-      ADVERTISED_PORT: 9092
-      ZK_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_HOST_NAME: 192.168.90.29
+      KAFKA_CREATE_TOPICS: "test-topic:3:1"
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
   ejabberd:
-    image: rroemhild/ejabberd
+    image: rroemhild/ejabberd:17.01
     ports:
+      - "9999:9999"
       - "8889:8889"
       - "5222:5222"
+    volumes:
+      - ./integration_test/ejabberd:/opt/ejabberd/conf
   redis:
     image: redis
     ports:
@@ -25,4 +35,5 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: "123"
       MYSQL_DATABASE: "testDB"
-
+      MYSQL_USER: "test"
+      MYSQL_PASSWORD: "123"

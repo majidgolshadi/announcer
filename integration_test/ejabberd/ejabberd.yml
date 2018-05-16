@@ -36,7 +36,7 @@
 ## 4: Info
 ## 5: Debug
 ##
-loglevel: 4
+loglevel: 5
 
 ##
 ## rotation: Describe how to rotate logs. Either size and/or date can trigger
@@ -114,7 +114,7 @@ listen:
   - 
     port: 5222
     module: ejabberd_c2s
-    certfile: "/opt/ejabberd-17.01/conf/server.pem"
+    certfile: "/opt/ejabberd/conf/server.pem"
     starttls: true
     ## To enforce TLS encryption for client connections,
     ## use this instead of the "starttls" option:
@@ -140,7 +140,7 @@ listen:
     port: 8889
     module: ejabberd_service
     access: all
-#    shaper_rule: fast
+    shaper_rule: fast
     ip: "0.0.0.0"
     service_check_from: false
     hosts:
@@ -148,8 +148,17 @@ listen:
         password: "1"
       "announcer":
         password: "announcer"
-      "p":
-        password: "p"
+
+  - 
+    port: 9999
+    module: ejabberd_service
+    access: all
+#    shaper_rule: fast
+    ip: "0.0.0.0"
+    service_check_from: false
+    hosts:
+      "last-activity":
+        password: "1"
 
 
   ##
@@ -588,8 +597,6 @@ language: "en"
 ## Modules enabled in all ejabberd virtual hosts.
 ##
 modules:
-  mod_smtcp:
-    host_port_qsize: "127.0.0.1:60030:1000000"
 #  mod_adhoc: {}
   mod_admin_extra: {}
 #  mod_announce: # recommends mod_adhoc
@@ -600,7 +607,6 @@ modules:
   mod_client_state:
     queue_chat_states: true
     queue_pep: true
-  mod_caps: {}
 #  mod_configure: {} # requires mod_adhoc
   mod_disco: {}
   ## mod_echo: {}
@@ -609,7 +615,6 @@ modules:
   ##   docroot: "/var/www"
   ##   accesslog: "/opt/ejabberd-17.01/logs/access.log"
   ## mod_irc: {}
-  mod_last: {}
   mod_muc:
     ## host: "conference.@HOST@"
     access:

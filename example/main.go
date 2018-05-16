@@ -5,24 +5,27 @@ import (
 	_ "net/http/pprof"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/BurntSushi/toml"
-	"github.com/majidgolshadi/client-announcer"
+	"github.com/majidgolshadi/client-announcer/input"
+	"github.com/majidgolshadi/client-announcer/logic"
+	"github.com/majidgolshadi/client-announcer/output"
 	log "github.com/sirupsen/logrus"
 	"github.com/wvanbergen/kazoo-go"
-	"time"
 )
 
 type config struct {
-	HttpPort  string `toml:"rest_api_port"`
-	DebugPort string `toml:"debug_port"`
+	HttpPort     string `toml:"rest_api_port"`
+	DebugPort    string `toml:"debug_port"`
+	InputBuffer  int    `toml:"input_buffer"`
+	OutputBuffer int    `toml:"output_buffer"`
 
 	Log       Log
 	Kafka     Kafka
 	Ejabberd  Ejabberd
 	Client    Client
 	Component Component
-	Zookeeper Zookeeper
 	Mysql     Mysql
 	Redis     Redis
 }
@@ -42,10 +45,9 @@ type Log struct {
 }
 
 type Ejabberd struct {
-	ClusterNodes   string `toml:"cluster_nodes"`
-	DefaultCluster string `toml:"default_cluster"`
-	RateLimit      int    `toml:"rate_limit"`
-	SendRetry      int    `toml:"send_retry"`
+	ClusterNodes string `toml:"cluster_nodes"`
+	RateLimit    int    `toml:"rate_limit"`
+	SendRetry    int    `toml:"send_retry"`
 }
 
 type Client struct {
@@ -63,33 +65,27 @@ type Component struct {
 	PingInterval int    `toml:"ping_interval"`
 }
 
-type Zookeeper struct {
-	ClusterNodes string `toml:"cluster_nodes"`
-	NameSpace    string `toml:"namespace"`
-}
-
 type Redis struct {
 	ClusterNodes  string `toml:"cluster_nodes"`
 	Password      string `toml:"password"`
 	DB            int    `toml:"db"`
-	HashTable     string `toml:"hash_table"`
+	SetPrefix     string `toml:"set_prefix"`
+	OfflineHTable string `toml:"offline_hash_table"`
 	CheckInterval int    `toml:"check_interval"`
 }
 
 type Mysql struct {
-	Address  string `toml:"address"`
-	Username string `toml:"username"`
-	Password string `toml:"password"`
-	DB       string `toml:"db"`
+	Address       string `toml:"address"`
+	Username      string `toml:"username"`
+	Password      string `toml:"password"`
+	DB            string `toml:"db"`
+	CheckInterval int    `toml:"check_interval"`
+	PaginationLength int `toml:"pagination_length"`
 }
 
 func main() {
-	var (
-		cnf          config
-		cluster      *client_announcer.Cluster
-		chatConnRepo *client_announcer.ChatServerClusterRepository
-		err          error
-	)
+	var cnf config
+	var err error
 
 	if _, err := toml.DecodeFile("config.toml", &cnf); err != nil {
 		log.Fatal("read configuration file error ", err.Error())
@@ -102,78 +98,109 @@ func main() {
 		log.Println(http.ListenAndServe(cnf.DebugPort, nil))
 	}()
 
-	if chatConnRepo, err = client_announcer.ChatServerClusterRepositoryFactory(cnf.Ejabberd.DefaultCluster); err != nil {
-		log.Fatal("create repo error ", err.Error())
-	}
+	inputChannel := make(chan *logic.ChannelAct, cnf.InputBuffer)
+	defer close(inputChannel)
 
-	if cnf.Zookeeper.ClusterNodes != "" {
-		if err = chatConnRepo.SetZookeeperAsDataStore(cnf.Zookeeper.ClusterNodes, cnf.Zookeeper.NameSpace); err != nil {
-			log.Fatal("set zookeeper as data-store error ", err.Error())
-			return
-		}
-	}
+	inputUser := make(chan *logic.UserAct, cnf.InputBuffer)
+	defer close(inputUser)
 
-	defer chatConnRepo.Close()
+	out := make(chan *output.Msg, cnf.OutputBuffer)
+	defer close(out)
 
-	cluster = &client_announcer.Cluster{
-		Addresses: strings.Split(cnf.Ejabberd.ClusterNodes, ","),
-		RateLimit: cnf.Ejabberd.RateLimit,
-		SendRetry: cnf.Ejabberd.SendRetry,
-	}
-
+	// Output part
+	var cluster *output.Cluster
 	if cnf.Component.Secret != "" {
-		cluster.Component.Name = cnf.Component.Name
-		cluster.Component.Secret = cnf.Component.Secret
-		cluster.Component.PingInterval = cnf.Component.PingInterval
-		cluster.Component.Domain = cnf.Component.Domain
-
-	} else if cnf.Client.Password != "" {
-		cluster.Client.Username = cnf.Client.Username
-		cluster.Client.Password = cnf.Client.Password
-		cluster.Client.Domain = cnf.Client.Domain
-		cluster.Client.Resource = cnf.Client.Resource
-		cluster.Client.PingInterval = cnf.Client.PingInterval
+		cluster, err = output.NewComponentCluster(strings.Split(cnf.Ejabberd.ClusterNodes, ","),
+			cnf.Ejabberd.SendRetry,
+			&output.EjabberdComponentOpt{
+				Name:         cnf.Component.Name,
+				Secret:       cnf.Component.Secret,
+				PingInterval: time.Duration(cnf.Component.PingInterval),
+				Domain:       cnf.Component.Domain,
+			})
+	} else {
+		cluster, err = output.NewClientCluster(strings.Split(cnf.Ejabberd.ClusterNodes, ","),
+			cnf.Ejabberd.SendRetry,
+			&output.EjabberdClientOpt{
+				Username:       cnf.Client.Username,
+				Password:       cnf.Client.Password,
+				PingInterval:   time.Duration(cnf.Component.PingInterval),
+				Domain:         cnf.Client.Domain,
+				ResourcePrefix: cnf.Client.Domain,
+			})
 	}
 
-	if err = cluster.Run(); err != nil {
-		log.Fatal("erjaberd create connection error ", err)
-		return
-	}
-
-	err = chatConnRepo.Save(cnf.Ejabberd.DefaultCluster, cluster)
 	if err != nil {
-		log.Fatal("store in repository error ", err.Error())
-		return
+		log.WithField("error", err.Error()).Fatal("cluster connecting error")
 	}
 
-	onlineUserInquiry, err := client_announcer.OnlineUserInquiryFactory(
-		cnf.Mysql.Address, cnf.Mysql.Username, cnf.Mysql.Password, cnf.Mysql.DB,
-		cnf.Redis.ClusterNodes, cnf.Redis.Password, cnf.Redis.DB, cnf.Redis.HashTable, cnf.Redis.CheckInterval)
+	go cluster.ListenAndSend(time.Duration(cnf.Ejabberd.RateLimit), out)
+
+	// Logic part
+	redis, err := logic.NewRedisUserDataStore(&logic.RedisOpt{
+		Address:          cnf.Redis.ClusterNodes,
+		Password:         cnf.Redis.Password,
+		Database:         cnf.Redis.DB,
+		SetPrefix:        cnf.Redis.SetPrefix,
+		OfflineHashTable: cnf.Redis.OfflineHTable,
+		CheckInterval:    time.Duration(cnf.Redis.CheckInterval),
+	})
 	if err != nil {
-		log.Fatal("inquiry error: ", err.Error())
-		return
+		log.WithField("error", err.Error()).Fatal("redis connection failed")
 	}
 
-	defer onlineUserInquiry.Close()
+	mysql, err := logic.NewMysqlChannelDataStore(&logic.MysqlOpt{
+		Address:       cnf.Mysql.Address,
+		Database:      cnf.Mysql.DB,
+		Username:      cnf.Mysql.Username,
+		Password:      cnf.Mysql.Password,
+		CheckInterval: time.Duration(cnf.Mysql.CheckInterval),
+		PageLength: cnf.Mysql.PaginationLength,
+	})
+	if err != nil {
+		log.WithField("error", err.Error()).Fatal("mysql connection failed")
+	}
 
-	if cnf.Kafka.Topics != "" {
-		commitOffsetInterval := time.Second * time.Duration(cnf.Kafka.CommitOffsetInterval)
-		kc := &client_announcer.KafkaConsumer{
-			Topics:               strings.Split(cnf.Kafka.Topics, ","),
+	chActor := &logic.ChannelActor{
+		ChannelDataStore: mysql,
+		UserDataStore:    redis,
+	}
+
+	go chActor.Listen(inputChannel, out)
+	defer chActor.Close()
+
+	usActor := &logic.UserActor{}
+	go usActor.Listen(inputUser, out)
+
+	// Input part
+	// Kafka consumer
+	var kafkaConsumer *input.KafkaConsumer
+	if cnf.Kafka.Zookeeper != "" {
+		zookeeper, zNode := kazoo.ParseConnectionString(cnf.Kafka.Zookeeper)
+		kafkaConsumer, err = input.NewKafkaConsumer(&input.KafkaConsumerOpt{
+			Zookeeper:            zookeeper,
+			ZNode:                zNode,
 			GroupName:            cnf.Kafka.GroupName,
-			Buffer:               cnf.Kafka.Buffer,
-			CommitOffsetInterval: commitOffsetInterval,
-		}
-		kc.Zookeeper, kc.ZNode = kazoo.ParseConnectionString(cnf.Kafka.Zookeeper)
-		if err = kc.RunService(chatConnRepo, onlineUserInquiry); err != nil {
-			log.Fatal("kafka consumer error: ", err.Error())
-			return
+			CommitOffsetInterval: time.Duration(cnf.Kafka.CommitOffsetInterval),
+			Topics:               strings.Split(cnf.Kafka.Topics, ","),
+			ReadBufferSize:       cnf.Kafka.Buffer,
+		})
+
+		defer kafkaConsumer.Close()
+
+		if err != nil {
+			log.WithField("error", err.Error()).Fatal("init kafka consumer failed")
 		}
 
-		defer kc.Close()
+		go func() {
+			if err := kafkaConsumer.Listen(inputChannel, inputUser); err != nil {
+				log.WithField("error", err.Error()).Fatal("kafka consumer listening error")
+			}
+		}()
 	}
 
-	client_announcer.RunHttpServer(cnf.HttpPort, onlineUserInquiry, chatConnRepo)
+	// Rest api
+	input.RunHttpServer(cnf.HttpPort, inputChannel, inputUser)
 }
 
 // TODO: Add tag for any application log
@@ -187,10 +214,6 @@ func initLogService(logConfig Log) {
 		log.SetLevel(log.ErrorLevel)
 	default:
 		log.SetLevel(log.WarnLevel)
-	}
-
-	if logConfig.Format == "json" {
-		log.SetFormatter(&log.JSONFormatter{})
 	}
 
 	switch logConfig.Format {

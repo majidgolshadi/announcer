@@ -5,71 +5,59 @@ Announcer is an interface for send xml message to online users.
 
 In order to communicate with ejabberd servers it can use client or component connections([XEP-0114](http://xmpp.org/extensions/xep-0114.html)) based on configuration.
 
-This app initialize from [toml](https://github.com/toml-lang/toml) file for standalone and use zookeeper as a runtime configuration initializer and data store for multi node installation.
-If you want to run this application standalone you don't need to config zookeeper part.
+![announcer architecture](./doc/image/arch.png)
 
 Configuration
 -------------
 ```toml
-rest_api_port=":8080"
-debug_port=":6060" #stack trace debuging port
+rest_api_port=":8080" #Rest api interface and port listen on
+debug_port=":6060"
+input_buffer=100 #Input channel buffer
+output_buffer=100 #Output channel buffer
 
 [log]
-format="json" #sequence/json/text (default:sequence)
-log_level="info" #debug/info/error/warning (default:warning)
-log_point="/path/to/log/file" #optional
+log_level="debug" #debug/info/warning/error (default: warning)
+format="text" #json/text/logrous (defualt: logrous)
 
-#Kafka consumer to get send request from kafka
-####these configurations are optional###
 [kafka]
-zookeeper="192.168.210.10:2181/kafka"
-topics="messages"
+zookeeper="127.0.0.1:2181/"
+topics="test-topic" #Multi topic can seperate with ','
 group_name="announcer"
 buffer=1000
-commit_offset_interval=10
+commit_offset_interval=10 #Notify zookeeper offset every commit_offset_interval message
 
-#Zookeeper connection configuration for datastore and notification center purpose
-####these configurations are optional###
-[zookeeper]
-cluster_nodes="192.168.95.171:2181"
-namespace="/watch" #Znode which data will be saved under
-
-#Mysql database connection configuration which contain ws_channel_member table
 [mysql]
 address="127.0.0.1:3306"
-username="root"
+username="test"
 password="123"
-db="test"
+db="testDB"
+pagination_length=100 #Fetch channel data bulk size
 
-#Redis connection configuration to get online users from
 [redis]
 cluster_nodes="127.0.0.1:6379"
 password=""
 db=0
-#Time in second duration that connection with redis will be check and if lost try to connect
-#In this period of time every users known as online users
-check_interval=2 #Second
-hash_table="UserPresence" #hash table that online users store in
+set_prefix="192.168."
+offline_hash_table="Offline"
+check_interval=100
 
 [ejabberd]
-cluster_nodes="192.168.95.180:5222"
-default_cluster="A"
-rate_limit=123123 #Send message/sec
-send_retry=6 #retry number to send a message if sent failed
+cluster_nodes="127.0.0.1:8889"
+rate_limit=10 #Msg/sec
+send_retry=6
 
-#Each cluster can ONLY has Client or Component connection
-#Please attention to use only one of them
-[client]
-username="4"
-password="4"
-domain="soroush.ir"
-ping_interval=2
+#[client]
+#username="admin"
+#password="password1234"
+#domain="example.de"
+#ping_interval=2 #Second
+#resource="announcer"
 
 [component]
 name="announcer"
 secret="announcer"
 domain="soroush.ir"
-ping_interval=2
+ping_interval=110
 ```
 
 >To use component connection you must be define component port for ejabberd servers
@@ -91,7 +79,7 @@ Samples
 ```json
 {
   "channel": 22,
-  "message": "ENCODE_MESSAGE_TO_BASE64"
+  "message": "BASE64_ENCODED_MESSAGE"
 }
 ```
 we have some issue with messages that they contain new line characters so for fast solutions we base64 message

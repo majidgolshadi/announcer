@@ -1,53 +1,48 @@
 rest_api_port=":8080"
 debug_port=":6060"
+input_buffer=100
+output_buffer=100
 
 [log]
-format="json" #json/text (default:text)
-log_level="info" #info/error/warning (default:warning)
-log_point="/path/to/log/file" #optional
+log_level="debug"
+format="text"
 
-#Optional
 [kafka]
-zookeeper="192.168.210.10:2181/kafka"
-topics="messages"
+zookeeper="127.0.0.1:2181/"
+topics="test-topic"
 group_name="announcer"
 buffer=1000
 commit_offset_interval=10
 
-#Optional
-[zookeeper]
-cluster_nodes="192.168.95.171:2181"
-namespace="/watch"
-
 [mysql]
 address="127.0.0.1:3306"
-username="root"
+username="test"
 password="123"
-db="test"
+db="testDB"
+pagination_length=100
 
 [redis]
 cluster_nodes="127.0.0.1:6379"
 password=""
 db=0
-hash_table="UserPresence"
-check_interval=2 #Second
+set_prefix="192.168."
+offline_hash_table="Offline"
+check_interval=100
 
-#For component define ejabberd port 8889
-#For client define ejabberd port 5222
 [ejabberd]
-cluster_nodes="192.168.95.180:5222,192.168.95.181:5222"
-default_cluster="A"
-rate_limit=4550 #msg/sec
+cluster_nodes="127.0.0.1:8889"
+rate_limit=10 #msg/sec
 send_retry=6
 
-[client]
-username="6"
-password="6"
-domain="soroush.ir"
-ping_interval=2 #Second
+#[client]
+#username="admin"
+#password="password1234"
+#domain="example.de"
+#ping_interval=2 #Second
+#resource="announcer"
 
 [component]
 name="announcer"
 secret="announcer"
-domain="s"
-ping_interval=2 #Second
+domain="soroush.ir"
+ping_interval=110
