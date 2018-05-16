@@ -3,7 +3,6 @@ package logic
 import (
 	"github.com/majidgolshadi/client-announcer/output"
 	"testing"
-	"time"
 )
 
 func TestGetAllOnlineUsers(t *testing.T) {
@@ -36,16 +35,17 @@ func TestSentToSoroushChannelOnlineUser(t *testing.T) {
 		for range out {
 			count++
 		}
-
-		time.Sleep(50 * time.Millisecond)
-		close(out)
 	}()
 
 	if err := ca.sentToOnlineUser(SoroushChannelId, "<template to=%s></template>", out); err != nil {
+		t.Log("sent to online user error: ", err.Error())
 		t.Fail()
 	}
 
+	close(out)
+
 	if count != 6 {
+		t.Log("count: ", count)
 		t.Fail()
 	}
 }
@@ -62,16 +62,17 @@ func TestSentToChannelWithNoOnlineUser(t *testing.T) {
 		for range out {
 			count++
 		}
-
-		time.Sleep(50 * time.Millisecond)
-		close(out)
 	}()
 
 	if err := ca.sentToOnlineUser("no_online", "<template to=%s></template>", out); err != nil {
+		t.Log("sent to online user error: ", err.Error())
 		t.Fail()
 	}
 
+	close(out)
+
 	if count != 0 {
+		t.Log("count: ", count)
 		t.Fail()
 	}
 }
@@ -83,22 +84,28 @@ func TestSentToChannelWithOnlineUser(t *testing.T) {
 	}
 
 	out := make(chan *output.Msg)
+	msgTemplate := "<template to=%s></template>"
 	count := 0
 	go func() {
-		for range out {
+		for msg := range out {
+			if msg.Temp != msgTemplate {
+				t.Log("invalid template")
+				t.Fail()
+			}
+
 			count++
 		}
-
-		time.Sleep(50 * time.Millisecond)
-		close(out)
 	}()
 
-	if err := ca.sentToOnlineUser("with_online", "<template to=%s></template>", out); err != nil {
+	if err := ca.sentToOnlineUser("with_online", msgTemplate, out); err != nil {
+		t.Log("sent to online user error: ", err.Error())
 		t.Fail()
 	}
 
+	close(out)
+
 	if count != 6 {
-		println("count is: ", count)
+		t.Log("count is: ", count)
 		t.Fail()
 	}
 }

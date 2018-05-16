@@ -2,6 +2,7 @@ package logic
 
 import (
 	"fmt"
+	"time"
 )
 
 type redisMock struct {
@@ -28,6 +29,8 @@ func (r *redisMock) GetAllOnlineUsers() (<-chan string, error) {
 		for i := 1; i < 7; i++ {
 			usersChan <- fmt.Sprintf("user%d", i)
 		}
+		// if channel closed before read from consumer data will be lost
+		time.Sleep(100*time.Millisecond)
 		close(usersChan)
 	}()
 

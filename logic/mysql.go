@@ -21,11 +21,12 @@ type MysqlOpt struct {
 	Username      string
 	Password      string
 	Database      string
+	PageLength    int
 	CheckInterval time.Duration
 }
 
 const ChannelIDQuery = `select channel_id from ws_channel_data where channel_channelid="%s"`
-const UsersChannelUsernameQuery = `select member_username from ws_channel_members where member_channelid="%s"`
+const UsersChannelUsernameQuery = `select member_username from ws_channel_members where member_channelid="%s" limit %d,%d`
 
 func (opt *MysqlOpt) init() error {
 	if opt.Database == "" {
@@ -103,25 +104,35 @@ func (ms *mysql) GetChannelMembers(channelID string) (username <-chan string, er
 		return nil, err
 	}
 
-	// unfortunately return method directly make result untrustable
-	rows, err := ms.conn.Query(fmt.Sprintf(UsersChannelUsernameQuery, id))
-	if err != nil {
-		return nil, err
-	}
-
-	go func() {
+	go func() error {
 		var username string
-		for rows.Next() {
-			if err := rows.Scan(&username); err != nil {
-				log.Error("scan mysql row error: ", err.Error())
-				continue
+		var emptyFlag bool
+		for offset := 0; ; offset = offset + ms.opt.PageLength {
+			emptyFlag = true
+			rows, err := ms.conn.Query(fmt.Sprintf(UsersChannelUsernameQuery, id, offset, ms.opt.PageLength))
+			if err != nil {
+				log.Error("query execution error: ", err.Error())
+				break
 			}
 
-			usernameChan <- username
+			for rows.Next() {
+				emptyFlag = false
+				if err := rows.Scan(&username); err != nil {
+					log.Error("scan mysql row error: ", err.Error())
+					continue
+				}
+
+				usernameChan <- username
+			}
+
+			rows.Close()
+			if emptyFlag {
+				break
+			}
 		}
 
-		rows.Close()
 		close(usernameChan)
+		return nil
 	}()
 
 	return usernameChan, nil

@@ -80,6 +80,7 @@ type Mysql struct {
 	Password      string `toml:"password"`
 	DB            string `toml:"db"`
 	CheckInterval int    `toml:"check_interval"`
+	PaginationLength int `toml:"pagination_length"`
 }
 
 func main() {
@@ -154,6 +155,7 @@ func main() {
 		Username:      cnf.Mysql.Username,
 		Password:      cnf.Mysql.Password,
 		CheckInterval: time.Duration(cnf.Mysql.CheckInterval),
+		PageLength: cnf.Mysql.PaginationLength,
 	})
 	if err != nil {
 		log.WithField("error", err.Error()).Fatal("mysql connection failed")
