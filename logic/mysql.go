@@ -75,7 +75,7 @@ func (ms *mysql) connect() (err error) {
 		return err
 	}
 
-	log.Info("connect to mysql ", ms.opt.Address)
+	log.Info("mysql connect established to ", ms.opt.Address)
 
 	go ms.keepConnectionAlive()
 	return ms.conn.Ping()
@@ -84,7 +84,7 @@ func (ms *mysql) connect() (err error) {
 func (ms *mysql) keepConnectionAlive() {
 	for range ms.checkConnTicker.C {
 		if err := ms.conn.Ping(); err != nil {
-			log.WithField("error", err.Error()).Warn("Mysql connection lost")
+			log.Warn("mysql connection lost ", err.Error())
 			ms.conn.Close()
 			ms.connect()
 		}
@@ -96,7 +96,7 @@ func (ms *mysql) GetChannelMembers(channelID string) (username <-chan string, er
 
 	row := ms.conn.QueryRow(fmt.Sprintf(ChannelIDQuery, channelID))
 	if row == nil {
-		return nil, errors.New("channel not found")
+		return nil, errors.New("mysql channel not found")
 	}
 
 	var id string
@@ -107,18 +107,21 @@ func (ms *mysql) GetChannelMembers(channelID string) (username <-chan string, er
 	go func() error {
 		var username string
 		var emptyFlag bool
-		for offset := 0; ; offset = offset + ms.opt.PageLength {
+
+		for offset := 0 ; ; offset = offset + ms.opt.PageLength {
+
 			emptyFlag = true
+
 			rows, err := ms.conn.Query(fmt.Sprintf(UsersChannelUsernameQuery, id, offset, ms.opt.PageLength))
 			if err != nil {
-				log.Error("query execution error: ", err.Error())
+				log.Error("mysql query execution error: ", err.Error())
 				break
 			}
 
 			for rows.Next() {
 				emptyFlag = false
 				if err := rows.Scan(&username); err != nil {
-					log.Error("scan mysql row error: ", err.Error())
+					log.Error("mysql scan row error: ", err.Error())
 					continue
 				}
 
@@ -140,7 +143,7 @@ func (ms *mysql) GetChannelMembers(channelID string) (username <-chan string, er
 }
 
 func (ms *mysql) Close() {
-	log.Warn("close mysql connections to ", ms.opt.Address)
+	log.Warn("mysql close connection to ", ms.opt.Address)
 	ms.checkConnTicker.Stop()
 
 	if ms.conn != nil {

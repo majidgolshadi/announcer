@@ -104,13 +104,13 @@ func (kc *KafkaConsumer) Listen(inputChannel chan<- *logic.ChannelAct, inputUser
 	for message := range kc.consumerGroup.Messages() {
 		req := &kafkaMsg{}
 		if err := json.Unmarshal(message.Value, req); err != nil {
-			println(err.Error())
+			log.Error("json unmarshal error: ", err.Error())
 			continue
 		}
 
 		mstTemp, err := base64.StdEncoding.DecodeString(req.Message)
 		if err != nil {
-			println(err.Error())
+			log.Error("base64 convert error: ", err.Error())
 			continue
 		}
 

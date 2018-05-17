@@ -28,13 +28,13 @@ func (ca *ChannelActor) Listen(chanAct <-chan *ChannelAct, msgChan chan<- *outpu
 	for rec := range chanAct {
 		start = time.Now()
 		if err := ca.sentToOnlineUser(rec.ChannelID, rec.MessageTemplate, msgChan); err != nil {
-			log.WithField("error", err.Error()).Error("fetch channel ", rec.ChannelID, " online users")
+			log.Error("channel actor fetch channel ", rec.ChannelID, " online users error: ", err.Error())
 		}
 
 		log.WithFields(log.Fields{
 			"redis": ca.monitRedisTime,
 			"mysql": time.Now().Sub(start).Seconds(),
-		}).Debug("process time consumption")
+		}).Debug("channel actor process time consumption")
 
 		ca.monitRedisTime = 0
 		ca.monitChannelUserNum = 0
@@ -84,13 +84,13 @@ func (ca *ChannelActor) sentToOnlineUser(channelID string, template string, msgC
 		"users":      ca.monitChannelUserNum,
 		"online":     ca.monitChannelOnlineUserNum,
 		"channel_id": channelID,
-	}).Debug("channel users")
+	}).Debug("channel actor")
 
 	return nil
 }
 
 func (ca *ChannelActor) Close() {
-	log.Warn("close channel actor")
+	log.Warn("channel actor close")
 	ca.UserDataStore.Close()
 	ca.ChannelDataStore.Close()
 }

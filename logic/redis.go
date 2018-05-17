@@ -79,7 +79,7 @@ func (r *redis) connect() (err error) {
 func (r *redis) keepConnectionAlive() {
 	for range r.checkConnTicker.C {
 		if statusCmd := r.conn.Ping(); statusCmd.Err() != nil {
-			log.WithField("error", statusCmd.Err()).Warn("redis connection lost")
+			log.Warn("redis connection lost: ", statusCmd.Err())
 			r.conn.Close()
 			r.connect()
 		}
@@ -118,7 +118,7 @@ func (r *redis) IsHeOffline(username string) bool {
 }
 
 func (r *redis) Close() {
-	log.Warn("close redis connections to ", r.opt.Address)
+	log.Warn("redis close connection to ", r.opt.Address)
 	r.checkConnTicker.Stop()
 
 	if r.conn != nil {

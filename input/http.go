@@ -37,8 +37,8 @@ func RunHttpServer(port string, inputChannel chan<- *logic.ChannelAct, inputUser
 }
 
 type announceChannelRequest struct {
-	Message   string `json:"message" binding:"required"`
-	ChannelId string `json:"channel_id" binding:"required"`
+	Message   string `json:"message"`
+	ChannelId string `json:"channel_id"`
 }
 
 func v1AnnounceChannelHandler(ctx *fasthttp.RequestCtx, inputChannel chan<- *logic.ChannelAct) {
@@ -70,8 +70,8 @@ func v1AnnounceChannelHandler(ctx *fasthttp.RequestCtx, inputChannel chan<- *log
 }
 
 type announceUserRequest struct {
-	Message  string `json:"message" binding:"required"`
-	Username string `json:"username" binding:"required"`
+	Message  string `json:"message"`
+	Username string `json:"username"`
 }
 
 func v1AnnounceUserHandler(ctx *fasthttp.RequestCtx, inputUser chan<- *logic.UserAct) {
@@ -103,8 +103,8 @@ func v1AnnounceUserHandler(ctx *fasthttp.RequestCtx, inputUser chan<- *logic.Use
 }
 
 type announceUsersRequest struct {
-	Message  string `json:"message" binding:"required"`
-	Usernames []string `json:"usernames" binding:"required"`
+	Message  string `json:"message"`
+	Usernames []string `json:"usernames"`
 }
 
 func v1AnnounceUsersHandler(ctx *fasthttp.RequestCtx, inputUser chan<- *logic.UserAct) {
