@@ -6,6 +6,7 @@ import (
 	"errors"
 	"github.com/Shopify/sarama"
 	"github.com/majidgolshadi/client-announcer/logic"
+	"github.com/majidgolshadi/client-announcer/output"
 	log "github.com/sirupsen/logrus"
 	"github.com/wvanbergen/kafka/consumergroup"
 	"math/rand"
@@ -89,12 +90,12 @@ func NewKafkaConsumer(option *KafkaConsumerOpt) (*KafkaConsumer, error) {
 }
 
 type kafkaMsg struct {
-	ChannelID string `json:"channel_id"`
-	Username  string `json:"username"`
-	Message   string `json:"message"`
+	ChannelID string   `json:"channel_id"`
+	Usernames []string `json:"usernames"`
+	Message   string   `json:"message"`
 }
 
-func (kc *KafkaConsumer) Listen(inputChannel chan<- *logic.ChannelAct, inputUser chan<- *logic.UserAct) (err error) {
+func (kc *KafkaConsumer) Listen(inputChannel chan<- *logic.ChannelAct, outputChannel chan<- *output.Msg) (err error) {
 	if kc.consumerGroup, err = consumergroup.JoinConsumerGroup(kc.opt.GroupName, kc.opt.Topics, kc.opt.Zookeeper, kc.config); err != nil {
 		return err
 	}
@@ -104,26 +105,34 @@ func (kc *KafkaConsumer) Listen(inputChannel chan<- *logic.ChannelAct, inputUser
 	for message := range kc.consumerGroup.Messages() {
 		req := &kafkaMsg{}
 		if err := json.Unmarshal(message.Value, req); err != nil {
-			log.Error("json unmarshal error: ", err.Error())
+			log.Error("kafka request json unmarshal error: ", err.Error())
 			continue
 		}
 
 		mstTemp, err := base64.StdEncoding.DecodeString(req.Message)
 		if err != nil {
-			log.Error("base64 convert error: ", err.Error())
+			log.Error("kafka request base64 convert error: ", err.Error())
 			continue
 		}
 
-		if req.Username != "" {
-			inputUser <- &logic.UserAct{
-				MessageTemplate: string(mstTemp),
-				Username:        req.Username,
-			}
-		} else {
+		if req.ChannelID != "" {
 			inputChannel <- &logic.ChannelAct{
 				MessageTemplate: string(mstTemp),
 				ChannelID:       req.ChannelID,
 			}
+		} else {
+
+			if len(req.Usernames) < 1 {
+				log.Error("kafka request usernames len less than 1")
+			}
+
+			for _, user := range req.Usernames {
+				outputChannel <- &output.Msg{
+					Temp: string(mstTemp),
+					User: user,
+				}
+			}
+
 		}
 
 		kc.lastMessage = message

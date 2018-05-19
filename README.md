@@ -12,16 +12,16 @@ Configuration
 ```toml
 rest_api_port=":8080" #Rest api interface and port listen on
 debug_port=":6060"
-input_buffer=100 #Input channel buffer
-output_buffer=100 #Output channel buffer
+input_buffer=100      #Input channel buffer
+output_buffer=100     #Output channel buffer
 
 [log]
-log_level="debug" #debug/info/warning/error (default: warning)
-format="text" #json/text/logrous (defualt: logrous)
+log_level="debug"     #debug/info/warning/error (default: warning)
+format="text"         #json/text/logrous (defualt: logrous)
 
 [kafka]
 zookeeper="127.0.0.1:2181/"
-topics="test-topic" #Multi topic can seperate with ','
+topics="test-topic"       #Multi topic can seperate with ','
 group_name="announcer"
 buffer=1000
 commit_offset_interval=10 #Notify zookeeper offset every commit_offset_interval message
@@ -31,19 +31,19 @@ address="127.0.0.1:3306"
 username="test"
 password="123"
 db="testDB"
-pagination_length=100 #Fetch channel data bulk size
+pagination_length=100    #Fetch channel data bulk size
 
 [redis]
 cluster_nodes="127.0.0.1:6379"
 password=""
 db=0
 set_prefix="192.168."
-offline_hash_table="Offline"
-check_interval=100
+read_timeout=1000       #optional sec (default: 1000 milisecond)
+max_retries=2           #optional (default: 0)
 
 [ejabberd]
 cluster_nodes="127.0.0.1:8889"
-rate_limit=10 #Msg/sec
+rate_limit=10           #Msg/sec
 send_retry=6
 
 #[client]
@@ -67,7 +67,6 @@ Rest APIs
 |URI|type|Description|
 |---|----|-----------|
 |/v1/announce/channel|POST|send channel message to that channel online members|
-|/v1/announce/user|POST|send a message to user|
 |/v1/announce/users|POST|send a message to users|
 
 Samples
@@ -92,21 +91,6 @@ sample message before base64 encoding
 ```
 
 In order to send a message to **all online users** you need to set channel_id **negative number**.
-
-**Announce user message:**
-**POST** request **/v1/announce/user** with json data like
-```json
-{
-    "username": "USERNAME",
-    "message": "BASE64_ENCODE_MESSAGE"
-}
-```
-Message will be send to specific user without any check that is he online or not
-
-sample message before base64 encoding:
-```xml
-<message xml:lang='en' to='%s' type='chat' id='ID_NUMBER' xmlns='jabber:client'><body>MESSAGE_CONTENT</body><body xml:lang='REPLY_ON_THREAD_ID'>989198872580</body><body xml:lang='MAJOR_TYPE'>SIMPLE_CHAT</body><body xml:lang='MINOR_TYPE'>TEXT</body><body xml:lang='REPLY_ON_MESSAGE_ID'>15219732781131af24fc1zwf</body><body xml:lang='SEND_TIME_IN_GMT'>1521973339583</body></message>
-```
 
 **Announce users message:**
 **POST** request **/v1/announce/users** with json data like

@@ -108,7 +108,7 @@ func (ms *mysql) GetChannelMembers(channelID string) (username <-chan string, er
 		var username string
 		var emptyFlag bool
 
-		for offset := 0 ; ; offset = offset + ms.opt.PageLength {
+		for offset := 0; ; offset = offset + ms.opt.PageLength {
 
 			emptyFlag = true
 

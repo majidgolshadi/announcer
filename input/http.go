@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"github.com/majidgolshadi/client-announcer/logic"
+	"github.com/majidgolshadi/client-announcer/output"
 	log "github.com/sirupsen/logrus"
 	"github.com/valyala/fasthttp"
 	"net/http"
@@ -13,7 +14,7 @@ import (
 const API_NOT_FOUND_MESSAGE = "404 api not found"
 
 // based on https://github.com/gin-gonic/gin/issues/205 issue we can't have something like /announcer/:announcer_name/send/
-func RunHttpServer(port string, inputChannel chan<- *logic.ChannelAct, inputUser chan<- *logic.UserAct) error {
+func RunHttpServer(port string, inputChannel chan<- *logic.ChannelAct, outputChannel chan<- *output.Msg) error {
 	log.Info("rest api server listening on port ", port)
 
 	return fasthttp.ListenAndServe(port, func(ctx *fasthttp.RequestCtx) {
@@ -23,10 +24,8 @@ func RunHttpServer(port string, inputChannel chan<- *logic.ChannelAct, inputUser
 		switch string(ctx.Path()) {
 		case "/v1/announce/channel":
 			v1AnnounceChannelHandler(ctx, inputChannel)
-		case "/v1/announce/user":
-			v1AnnounceUserHandler(ctx, inputUser)
 		case "/v1/announce/users":
-			v1AnnounceUsersHandler(ctx, inputUser)
+			v1AnnounceUsersHandler(ctx, outputChannel)
 		default:
 			ctx.Error(API_NOT_FOUND_MESSAGE, fasthttp.StatusNotFound)
 		}
@@ -69,45 +68,12 @@ func v1AnnounceChannelHandler(ctx *fasthttp.RequestCtx, inputChannel chan<- *log
 	ctx.SetStatusCode(http.StatusOK)
 }
 
-type announceUserRequest struct {
-	Message  string `json:"message"`
-	Username string `json:"username"`
-}
-
-func v1AnnounceUserHandler(ctx *fasthttp.RequestCtx, inputUser chan<- *logic.UserAct) {
-	if string(ctx.Method()) != "POST" {
-		ctx.Error(API_NOT_FOUND_MESSAGE, fasthttp.StatusNotFound)
-		return
-	}
-
-	var input announceUserRequest
-	if err := json.Unmarshal(ctx.Request.Body(), &input); err != nil {
-		log.WithField("bad request", ctx.Request.Body()).Error()
-		ctx.SetStatusCode(fasthttp.StatusBadRequest)
-		return
-	}
-
-	msgTmp, err := base64.StdEncoding.DecodeString(input.Message)
-	if err != nil {
-		ctx.SetStatusCode(fasthttp.StatusBadRequest)
-		ctx.SetBody([]byte(err.Error()))
-		return
-	}
-
-	inputUser <- &logic.UserAct{
-		MessageTemplate: string(msgTmp),
-		Username:        input.Username,
-	}
-
-	ctx.SetStatusCode(http.StatusOK)
-}
-
 type announceUsersRequest struct {
-	Message  string `json:"message"`
+	Message   string   `json:"message"`
 	Usernames []string `json:"usernames"`
 }
 
-func v1AnnounceUsersHandler(ctx *fasthttp.RequestCtx, inputUser chan<- *logic.UserAct) {
+func v1AnnounceUsersHandler(ctx *fasthttp.RequestCtx, outputChannel chan<- *output.Msg) {
 	if string(ctx.Method()) != "POST" {
 		ctx.Error(API_NOT_FOUND_MESSAGE, fasthttp.StatusNotFound)
 		return
@@ -116,6 +82,11 @@ func v1AnnounceUsersHandler(ctx *fasthttp.RequestCtx, inputUser chan<- *logic.Us
 	var input announceUsersRequest
 	if err := json.Unmarshal(ctx.Request.Body(), &input); err != nil {
 		log.WithField("bad request", ctx.Request.Body()).Error()
+		ctx.SetStatusCode(fasthttp.StatusBadRequest)
+		return
+	}
+
+	if len(input.Usernames) < 1 {
 		ctx.SetStatusCode(fasthttp.StatusBadRequest)
 		return
 	}
@@ -130,9 +101,9 @@ func v1AnnounceUsersHandler(ctx *fasthttp.RequestCtx, inputUser chan<- *logic.Us
 	go func() {
 		messageTemplate := string(msgTmp)
 		for _, username := range input.Usernames {
-			inputUser <- &logic.UserAct{
-				MessageTemplate: messageTemplate,
-				Username: username,
+			outputChannel <- &output.Msg{
+				Temp: messageTemplate,
+				User: username,
 			}
 		}
 	}()

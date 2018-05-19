@@ -16,10 +16,10 @@ type Msg struct {
 	User string
 }
 
-func NewClientCluster(address []string, retry int, opt *EjabberdClientOpt) (c *Cluster, err error) {
+func NewClientCluster(address []string, sendRetry int, opt *EjabberdClientOpt) (c *Cluster, err error) {
 	c = &Cluster{
 		address: address,
-		retry:   retry,
+		retry:   sendRetry,
 	}
 
 	for _, host := range address {

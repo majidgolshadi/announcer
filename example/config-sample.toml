@@ -26,8 +26,9 @@ cluster_nodes="127.0.0.1:6379"
 password=""
 db=0
 set_prefix="192.168."
-offline_hash_table="Offline"
 check_interval=100
+read_timeout=2 #optional miliseconde
+max_retries=2 #optional
 
 [ejabberd]
 cluster_nodes="127.0.0.1:8889"

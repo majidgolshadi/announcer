@@ -15,12 +15,12 @@ type redis struct {
 }
 
 type RedisOpt struct {
-	Address          string
-	Password         string
-	Database         int
-	CheckInterval    time.Duration
-	SetPrefix        string
-	OfflineHashTable string
+	Address     string
+	Password    string
+	Database    int
+	SetPrefix   string
+	ReadTimeout time.Duration
+	MaxRetries  int
 }
 
 func (opt *RedisOpt) init() error {
@@ -32,11 +32,11 @@ func (opt *RedisOpt) init() error {
 		opt.Address = "127.0.0.1:6379"
 	}
 
-	if opt.CheckInterval == 0 {
-		opt.CheckInterval = 5
+	if opt.ReadTimeout == 0 {
+		opt.ReadTimeout = 1
 	}
 
-	opt.CheckInterval = opt.CheckInterval * time.Second
+	opt.ReadTimeout = opt.ReadTimeout * time.Millisecond
 
 	return nil
 }
@@ -47,25 +47,20 @@ func NewRedisUserDataStore(opt *RedisOpt) (UserDataStore, error) {
 	}
 
 	r := &redis{
-		opt:             opt,
-		checkConnTicker: time.NewTicker(opt.CheckInterval),
+		opt: opt,
 	}
 
-	go r.connectAndKeep()
-	return r, nil
-}
-
-func (r *redis) connectAndKeep() {
 	r.connect()
-	go r.keepConnectionAlive()
+	return r, nil
 }
 
 func (r *redis) connect() (err error) {
 	r.conn = redisCli.NewClient(&redisCli.Options{
-		Addr:       r.opt.Address,
-		Password:   r.opt.Password,
-		DB:         r.opt.Database,
-		MaxRetries: 10,
+		Addr:        r.opt.Address,
+		Password:    r.opt.Password,
+		DB:          r.opt.Database,
+		MaxRetries:  r.opt.MaxRetries,
+		ReadTimeout: r.opt.ReadTimeout,
 		OnConnect: func(conn *redisCli.Conn) error {
 			log.Info("redis connection established to ", r.opt.Address)
 			return nil
@@ -74,16 +69,6 @@ func (r *redis) connect() (err error) {
 
 	_, err = r.conn.Ping().Result()
 	return err
-}
-
-func (r *redis) keepConnectionAlive() {
-	for range r.checkConnTicker.C {
-		if statusCmd := r.conn.Ping(); statusCmd.Err() != nil {
-			log.Warn("redis connection lost: ", statusCmd.Err())
-			r.conn.Close()
-			r.connect()
-		}
-	}
 }
 
 func (r *redis) GetAllOnlineUsers() (<-chan string, error) {
@@ -108,19 +93,16 @@ func (r *redis) GetAllOnlineUsers() (<-chan string, error) {
 }
 
 func (r *redis) IsHeOnline(username string) bool {
-	result, _ := r.conn.Get(username).Result()
-	return result != ""
-}
+	result, err := r.conn.Get(username).Result()
+	if err != nil {
+		log.Warn("redis Get error: ", err.Error())
+	}
 
-func (r *redis) IsHeOffline(username string) bool {
-	result, _ := r.conn.HGet(r.opt.OfflineHashTable, username).Result()
 	return result != ""
 }
 
 func (r *redis) Close() {
 	log.Warn("redis close connection to ", r.opt.Address)
-	r.checkConnTicker.Stop()
-
 	if r.conn != nil {
 		r.conn.Close()
 	}

@@ -66,21 +66,21 @@ type Component struct {
 }
 
 type Redis struct {
-	ClusterNodes  string `toml:"cluster_nodes"`
-	Password      string `toml:"password"`
-	DB            int    `toml:"db"`
-	SetPrefix     string `toml:"set_prefix"`
-	OfflineHTable string `toml:"offline_hash_table"`
-	CheckInterval int    `toml:"check_interval"`
+	ClusterNodes string `toml:"cluster_nodes"`
+	Password     string `toml:"password"`
+	DB           int    `toml:"db"`
+	SetPrefix    string `toml:"set_prefix"`
+	ReadTimeout  int    `toml:"read_timeout"`
+	MaxRetries   int    `toml:"max_retries"`
 }
 
 type Mysql struct {
-	Address       string `toml:"address"`
-	Username      string `toml:"username"`
-	Password      string `toml:"password"`
-	DB            string `toml:"db"`
-	CheckInterval int    `toml:"check_interval"`
-	PaginationLength int `toml:"pagination_length"`
+	Address          string `toml:"address"`
+	Username         string `toml:"username"`
+	Password         string `toml:"password"`
+	DB               string `toml:"db"`
+	CheckInterval    int    `toml:"check_interval"`
+	PaginationLength int    `toml:"pagination_length"`
 }
 
 func main() {
@@ -100,9 +100,6 @@ func main() {
 
 	inputChannel := make(chan *logic.ChannelAct, cnf.InputBuffer)
 	defer close(inputChannel)
-
-	inputUser := make(chan *logic.UserAct, cnf.InputBuffer)
-	defer close(inputUser)
 
 	out := make(chan *output.Msg, cnf.OutputBuffer)
 	defer close(out)
@@ -138,12 +135,12 @@ func main() {
 
 	// Logic part
 	redis, err := logic.NewRedisUserDataStore(&logic.RedisOpt{
-		Address:          cnf.Redis.ClusterNodes,
-		Password:         cnf.Redis.Password,
-		Database:         cnf.Redis.DB,
-		SetPrefix:        cnf.Redis.SetPrefix,
-		OfflineHashTable: cnf.Redis.OfflineHTable,
-		CheckInterval:    time.Duration(cnf.Redis.CheckInterval),
+		Address:     cnf.Redis.ClusterNodes,
+		Password:    cnf.Redis.Password,
+		Database:    cnf.Redis.DB,
+		SetPrefix:   cnf.Redis.SetPrefix,
+		MaxRetries:  cnf.Redis.MaxRetries,
+		ReadTimeout: time.Duration(cnf.Redis.ReadTimeout),
 	})
 	if err != nil {
 		log.WithField("error", err.Error()).Fatal("redis connection failed")
@@ -155,7 +152,7 @@ func main() {
 		Username:      cnf.Mysql.Username,
 		Password:      cnf.Mysql.Password,
 		CheckInterval: time.Duration(cnf.Mysql.CheckInterval),
-		PageLength: cnf.Mysql.PaginationLength,
+		PageLength:    cnf.Mysql.PaginationLength,
 	})
 	if err != nil {
 		log.WithField("error", err.Error()).Fatal("mysql connection failed")
@@ -168,9 +165,6 @@ func main() {
 
 	go chActor.Listen(inputChannel, out)
 	defer chActor.Close()
-
-	usActor := &logic.UserActor{}
-	go usActor.Listen(inputUser, out)
 
 	// Input part
 	// Kafka consumer
@@ -193,14 +187,14 @@ func main() {
 		}
 
 		go func() {
-			if err := kafkaConsumer.Listen(inputChannel, inputUser); err != nil {
+			if err := kafkaConsumer.Listen(inputChannel, out); err != nil {
 				log.WithField("error", err.Error()).Fatal("kafka consumer listening error")
 			}
 		}()
 	}
 
 	// Rest api
-	input.RunHttpServer(cnf.HttpPort, inputChannel, inputUser)
+	input.RunHttpServer(cnf.HttpPort, inputChannel, out)
 }
 
 // TODO: Add tag for any application log
