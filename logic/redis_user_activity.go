@@ -41,7 +41,7 @@ func (opt *RedisOpt) init() error {
 	return nil
 }
 
-func NewRedisUserDataStore(opt *RedisOpt) (UserDataStore, error) {
+func NewRedisUserDataStore(opt *RedisOpt) (UserActivity, error) {
 	if err := opt.init(); err != nil {
 		return nil, err
 	}

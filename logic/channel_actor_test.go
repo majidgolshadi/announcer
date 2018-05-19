@@ -6,14 +6,14 @@ import (
 )
 
 func TestGetAllOnlineUsers(t *testing.T) {
-	r := NewRedisMock()
+	r := NewUserActivityMock()
 
 	ca := &ChannelActor{
-		UserDataStore: r,
+		UserActivity: r,
 	}
 
 	var userCount int
-	reChan, _ := ca.UserDataStore.GetAllOnlineUsers()
+	reChan, _ := ca.UserActivity.GetAllOnlineUsers()
 	for range reChan {
 		userCount++
 	}
@@ -25,7 +25,7 @@ func TestGetAllOnlineUsers(t *testing.T) {
 
 func TestSentToSoroushChannelOnlineUser(t *testing.T) {
 	ca := &ChannelActor{
-		UserDataStore:    NewRedisMock(),
+		UserActivity:     NewUserActivityMock(),
 		ChannelDataStore: NewMysqlMock(),
 	}
 
@@ -52,7 +52,7 @@ func TestSentToSoroushChannelOnlineUser(t *testing.T) {
 
 func TestSentToChannelWithNoOnlineUser(t *testing.T) {
 	ca := &ChannelActor{
-		UserDataStore:    NewRedisMock(),
+		UserActivity:     NewUserActivityMock(),
 		ChannelDataStore: NewMysqlMock(),
 	}
 
@@ -79,7 +79,7 @@ func TestSentToChannelWithNoOnlineUser(t *testing.T) {
 
 func TestSentToChannelWithOnlineUser(t *testing.T) {
 	ca := &ChannelActor{
-		UserDataStore:    NewRedisMock(),
+		UserActivity:     NewUserActivityMock(),
 		ChannelDataStore: NewMysqlMock(),
 	}
 

@@ -12,7 +12,7 @@ type ChannelAct struct {
 }
 
 type ChannelActor struct {
-	UserDataStore    UserDataStore
+	UserActivity     UserActivity
 	ChannelDataStore ChannelDataStore
 
 	monitRedisTime            float64
@@ -47,7 +47,7 @@ func (ca *ChannelActor) Listen(chanAct <-chan *ChannelAct, msgChan chan<- *outpu
 func (ca *ChannelActor) sentToOnlineUser(channelID string, template string, msgChan chan<- *output.Msg) error {
 	// all users are soroush official channel members
 	if channelID == SoroushChannelId {
-		userChan, err := ca.UserDataStore.GetAllOnlineUsers()
+		userChan, err := ca.UserActivity.GetAllOnlineUsers()
 		if err != nil {
 			return err
 		}
@@ -71,7 +71,7 @@ func (ca *ChannelActor) sentToOnlineUser(channelID string, template string, msgC
 	for username := range userChan {
 		ca.monitChannelUserNum++
 		// Is he/she online
-		if ca.UserDataStore.IsHeOnline(username) {
+		if ca.UserActivity.IsHeOnline(username) {
 			ca.monitChannelOnlineUserNum++
 			msgChan <- &output.Msg{
 				Temp: template,
@@ -91,6 +91,6 @@ func (ca *ChannelActor) sentToOnlineUser(channelID string, template string, msgC
 
 func (ca *ChannelActor) Close() {
 	log.Warn("channel actor close")
-	ca.UserDataStore.Close()
+	ca.UserActivity.Close()
 	ca.ChannelDataStore.Close()
 }

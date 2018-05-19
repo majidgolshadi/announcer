@@ -9,7 +9,7 @@ type redisMock struct {
 	onlineUsers map[string]bool
 }
 
-func NewRedisMock() UserDataStore {
+func NewUserActivityMock() UserActivity {
 	return &redisMock{
 		onlineUsers: map[string]bool{
 			"user1": true,

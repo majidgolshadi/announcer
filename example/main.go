@@ -160,7 +160,7 @@ func main() {
 
 	chActor := &logic.ChannelActor{
 		ChannelDataStore: mysql,
-		UserDataStore:    redis,
+		UserActivity:     redis,
 	}
 
 	go chActor.Listen(inputChannel, out)
