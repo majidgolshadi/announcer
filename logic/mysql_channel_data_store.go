@@ -22,10 +22,12 @@ type MysqlOpt struct {
 	Password      string
 	Database      string
 	PageLength    int
+	MaxIdealConn  int
+	MaxOpenConn   int
 	CheckInterval time.Duration
 }
 
-const ChannelIDQuery = `select channel_id from ws_channel_data where channel_channelid="%s"`
+const ChannelIDQuery = `select channel_id from ws_channel_data where channel_state="ACCEPTED" and channel_channelid="%s"`
 const UsersChannelUsernameQuery = `select member_username from ws_channel_members where member_channelid="%s" limit %d,%d`
 
 func (opt *MysqlOpt) init() error {
@@ -39,6 +41,14 @@ func (opt *MysqlOpt) init() error {
 
 	if opt.Username == "" {
 		opt.Username = "root"
+	}
+
+	if opt.MaxOpenConn == 0 {
+		opt.MaxOpenConn = 10
+	}
+
+	if opt.MaxIdealConn == 0 {
+		opt.MaxIdealConn = 10
 	}
 
 	if opt.CheckInterval == 0 {
@@ -75,6 +85,9 @@ func (ms *mysql) connect() (err error) {
 		return err
 	}
 
+	ms.conn.SetMaxIdleConns(ms.opt.MaxIdealConn)
+	ms.conn.SetMaxOpenConns(ms.opt.MaxOpenConn)
+
 	log.Info("mysql connect established to ", ms.opt.Address)
 
 	go ms.keepConnectionAlive()
@@ -94,6 +107,7 @@ func (ms *mysql) keepConnectionAlive() {
 func (ms *mysql) GetChannelMembers(channelID string) (username <-chan string, err error) {
 	usernameChan := make(chan string)
 
+	// get channel id
 	row := ms.conn.QueryRow(fmt.Sprintf(ChannelIDQuery, channelID))
 	if row == nil {
 		return nil, errors.New("mysql channel not found")
@@ -104,20 +118,25 @@ func (ms *mysql) GetChannelMembers(channelID string) (username <-chan string, er
 		return nil, err
 	}
 
+	// Fetch channel users
 	go func() error {
 		var username string
-		var emptyFlag bool
+		emptyFlag := false
+		var startMysqlQueryTime time.Time
 
-		for offset := 0; ; offset = offset + ms.opt.PageLength {
-
+		for offset := 0; !emptyFlag; offset = offset + ms.opt.PageLength {
 			emptyFlag = true
 
+			startMysqlQueryTime = time.Now()
 			rows, err := ms.conn.Query(fmt.Sprintf(UsersChannelUsernameQuery, id, offset, ms.opt.PageLength))
+			log.Debug("mysql time: ", time.Now().Sub(startMysqlQueryTime).Seconds())
+
 			if err != nil {
 				log.Error("mysql query execution error: ", err.Error())
 				break
 			}
 
+			// report each on to up layer
 			for rows.Next() {
 				emptyFlag = false
 				if err := rows.Scan(&username); err != nil {
@@ -129,9 +148,6 @@ func (ms *mysql) GetChannelMembers(channelID string) (username <-chan string, er
 			}
 
 			rows.Close()
-			if emptyFlag {
-				break
-			}
 		}
 
 		close(usernameChan)

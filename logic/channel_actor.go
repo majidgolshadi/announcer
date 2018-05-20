@@ -15,7 +15,6 @@ type ChannelActor struct {
 	UserActivity     UserActivity
 	ChannelDataStore ChannelDataStore
 
-	monitRedisTime            float64
 	monitChannelUserNum       int
 	monitChannelOnlineUserNum int
 }
@@ -31,12 +30,8 @@ func (ca *ChannelActor) Listen(chanAct <-chan *ChannelAct, msgChan chan<- *outpu
 			log.Error("channel actor fetch channel ", rec.ChannelID, " online users error: ", err.Error())
 		}
 
-		log.WithFields(log.Fields{
-			"redis": ca.monitRedisTime,
-			"mysql": time.Now().Sub(start).Seconds(),
-		}).Debug("channel actor process time consumption")
+		log.Info("channel actor process channel ", rec.ChannelID, " time was: ", time.Now().Sub(start).Seconds())
 
-		ca.monitRedisTime = 0
 		ca.monitChannelUserNum = 0
 		ca.monitChannelOnlineUserNum = 0
 	}
@@ -45,6 +40,7 @@ func (ca *ChannelActor) Listen(chanAct <-chan *ChannelAct, msgChan chan<- *outpu
 }
 
 func (ca *ChannelActor) sentToOnlineUser(channelID string, template string, msgChan chan<- *output.Msg) error {
+
 	// all users are soroush official channel members
 	if channelID == SoroushChannelId {
 		userChan, err := ca.UserActivity.GetAllOnlineUsers()
@@ -84,7 +80,7 @@ func (ca *ChannelActor) sentToOnlineUser(channelID string, template string, msgC
 		"users":      ca.monitChannelUserNum,
 		"online":     ca.monitChannelOnlineUserNum,
 		"channel_id": channelID,
-	}).Debug("channel actor")
+	}).Info("channel actor")
 
 	return nil
 }

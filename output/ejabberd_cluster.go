@@ -96,11 +96,11 @@ func (c *Cluster) ListenAndSend(rateLimit time.Duration, messages chan *Msg) {
 func (c *Cluster) sendWithRetry(msg *Msg) {
 	for i := 1; i < c.retry; i++ {
 		for _, conn := range c.conn {
-			if err := conn.Send(msg); err == nil {
-				return
-			} else {
+			if err := conn.Send(msg); err != nil {
 				continue
 			}
+
+			return
 		}
 
 		log.WithField("message", msg).Warn("retry to send message after ", i, " second...")

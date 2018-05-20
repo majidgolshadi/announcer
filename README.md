@@ -14,6 +14,7 @@ rest_api_port=":8080" #Rest api interface and port listen on
 debug_port=":6060"
 input_buffer=100      #Input channel buffer
 output_buffer=100     #Output channel buffer
+logic_process_number=2#Increase logic concurrency
 
 [log]
 log_level="debug"     #debug/info/warning/error (default: warning)
@@ -32,6 +33,8 @@ username="test"
 password="123"
 db="testDB"
 pagination_length=100    #Fetch channel data bulk size
+max_ideal_conn=50       #Optional (default: 10)
+max_open_conn=50        #Optional (default: 10)
 
 [redis]
 cluster_nodes="127.0.0.1:6379"

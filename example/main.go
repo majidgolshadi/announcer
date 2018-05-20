@@ -16,10 +16,11 @@ import (
 )
 
 type config struct {
-	HttpPort     string `toml:"rest_api_port"`
-	DebugPort    string `toml:"debug_port"`
-	InputBuffer  int    `toml:"input_buffer"`
-	OutputBuffer int    `toml:"output_buffer"`
+	HttpPort        string `toml:"rest_api_port"`
+	DebugPort       string `toml:"debug_port"`
+	LogicProcessNum int    `toml:"logic_process_number"`
+	InputBuffer     int    `toml:"input_buffer"`
+	OutputBuffer    int    `toml:"output_buffer"`
 
 	Log       Log
 	Kafka     Kafka
@@ -75,12 +76,14 @@ type Redis struct {
 }
 
 type Mysql struct {
-	Address          string `toml:"address"`
-	Username         string `toml:"username"`
-	Password         string `toml:"password"`
-	DB               string `toml:"db"`
-	CheckInterval    int    `toml:"check_interval"`
-	PaginationLength int    `toml:"pagination_length"`
+	Address            string `toml:"address"`
+	Username           string `toml:"username"`
+	Password           string `toml:"password"`
+	DB                 string `toml:"db"`
+	CheckInterval      int    `toml:"check_interval"`
+	PaginationLength   int    `toml:"pagination_length"`
+	MaxIdealConnection int    `toml:"max_ideal_conn"`
+	MaxOpenConnection  int    `toml:"max_open_conn"`
 }
 
 func main() {
@@ -153,18 +156,35 @@ func main() {
 		Password:      cnf.Mysql.Password,
 		CheckInterval: time.Duration(cnf.Mysql.CheckInterval),
 		PageLength:    cnf.Mysql.PaginationLength,
+		MaxIdealConn:  cnf.Mysql.MaxIdealConnection,
+		MaxOpenConn:   cnf.Mysql.MaxOpenConnection,
 	})
 	if err != nil {
 		log.WithField("error", err.Error()).Fatal("mysql connection failed")
 	}
 
-	chActor := &logic.ChannelActor{
-		ChannelDataStore: mysql,
-		UserActivity:     redis,
+	if cnf.LogicProcessNum < 1 {
+		log.Fatal("logic process number is less than 1")
 	}
 
-	go chActor.Listen(inputChannel, out)
-	defer chActor.Close()
+	var logicProcesses []*logic.ChannelActor
+
+	for i := 0; i < cnf.LogicProcessNum; i++ {
+		channelActor := &logic.ChannelActor{
+			ChannelDataStore: mysql,
+			UserActivity:     redis,
+		}
+
+		logicProcesses = append(logicProcesses, channelActor)
+
+		go channelActor.Listen(inputChannel, out)
+	}
+
+	defer func() {
+		for index := range logicProcesses {
+			logicProcesses[index].Close()
+		}
+	}()
 
 	// Input part
 	// Kafka consumer

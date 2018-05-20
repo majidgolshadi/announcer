@@ -93,11 +93,7 @@ func (r *redis) GetAllOnlineUsers() (<-chan string, error) {
 }
 
 func (r *redis) IsHeOnline(username string) bool {
-	result, err := r.conn.Get(username).Result()
-	if err != nil {
-		log.Warn("redis Get error: ", err.Error())
-	}
-
+	result, _ := r.conn.Get(username).Result()
 	return result != ""
 }
 

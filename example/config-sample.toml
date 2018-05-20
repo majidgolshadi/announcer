@@ -2,6 +2,7 @@ rest_api_port=":8080"
 debug_port=":6060"
 input_buffer=100
 output_buffer=100
+logic_process_number=2
 
 [log]
 log_level="debug"
@@ -20,6 +21,8 @@ username="test"
 password="123"
 db="testDB"
 pagination_length=100
+max_ideal_conn=50
+max_open_conn=50
 
 [redis]
 cluster_nodes="127.0.0.1:6379"
