@@ -30,7 +30,12 @@ func (ca *ChannelActor) Listen(chanAct <-chan *ChannelAct, msgChan chan<- *outpu
 			log.Error("channel actor fetch channel ", rec.ChannelID, " online users error: ", err.Error())
 		}
 
-		log.Info("channel actor process channel ", rec.ChannelID, " time was: ", time.Now().Sub(start).Seconds())
+		log.WithFields(log.Fields{
+			"users":        ca.monitChannelUserNum,
+			"online":       ca.monitChannelOnlineUserNum,
+			"channel_id":   rec.ChannelID,
+			"process_time": time.Now().Sub(start).Seconds(),
+		}).Info("channel actor")
 
 		ca.monitChannelUserNum = 0
 		ca.monitChannelOnlineUserNum = 0
@@ -75,12 +80,6 @@ func (ca *ChannelActor) sentToOnlineUser(channelID string, template string, msgC
 			}
 		}
 	}
-
-	log.WithFields(log.Fields{
-		"users":      ca.monitChannelUserNum,
-		"online":     ca.monitChannelOnlineUserNum,
-		"channel_id": channelID,
-	}).Info("channel actor")
 
 	return nil
 }
