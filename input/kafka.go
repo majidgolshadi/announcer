@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/Shopify/sarama"
 	"github.com/majidgolshadi/client-announcer/logic"
 	"github.com/majidgolshadi/client-announcer/output"
@@ -11,7 +12,6 @@ import (
 	"github.com/wvanbergen/kafka/consumergroup"
 	"math/rand"
 	"time"
-	"fmt"
 )
 
 type KafkaConsumer struct {
@@ -94,7 +94,7 @@ type kafkaMsg struct {
 	ChannelID string   `json:"channel_id"`
 	Usernames []string `json:"usernames"`
 	Message   string   `json:"message"`
-	template []byte
+	template  []byte
 }
 
 func (kc *KafkaConsumer) Listen(inputChannel chan<- *logic.ChannelAct, outputChannel chan<- *output.Msg) (err error) {
@@ -102,9 +102,14 @@ func (kc *KafkaConsumer) Listen(inputChannel chan<- *logic.ChannelAct, outputCha
 		return err
 	}
 
-	req := &kafkaMsg{}
-	for message := range kc.consumerGroup.Messages() {
-		if err := SaramMessageUnmarshal(message, req); err != nil {
+	go kc.action(kc.consumerGroup.Messages(), inputChannel, outputChannel)
+	return nil
+}
+
+func (kc *KafkaConsumer) action(messageChannel <-chan *sarama.ConsumerMessage, inputChannel chan<- *logic.ChannelAct, outputChannel chan<- *output.Msg) {
+	for message := range messageChannel {
+		req := &kafkaMsg{}
+		if err := saramMessageUnmarshal(message, req); err != nil {
 			log.WithField("error", err.Error()).
 				Error("kafka input request")
 
@@ -129,11 +134,9 @@ func (kc *KafkaConsumer) Listen(inputChannel chan<- *logic.ChannelAct, outputCha
 
 		kc.consumerGroup.CommitUpto(message)
 	}
-
-	return nil
 }
 
-func SaramMessageUnmarshal(message *sarama.ConsumerMessage, msg *kafkaMsg) (err error) {
+func saramMessageUnmarshal(message *sarama.ConsumerMessage, msg *kafkaMsg) (err error) {
 	if err = json.Unmarshal(message.Value, msg); err != nil {
 		return errors.New(fmt.Sprintf("json unmarshal error %s", err.Error()))
 	}
@@ -149,7 +152,7 @@ func SaramMessageUnmarshal(message *sarama.ConsumerMessage, msg *kafkaMsg) (err 
 
 	if msg.ChannelID == "" && len(msg.Usernames) < 1 ||
 		msg.ChannelID != "" && len(msg.Usernames) > 1 {
-			return errors.New("bad request")
+		return errors.New("bad request")
 	}
 
 	return nil

@@ -16,12 +16,12 @@ import (
 )
 
 type config struct {
-	HttpPort        string `toml:"rest_api_port"`
-	DebugPort       string `toml:"debug_port"`
-	LogicProcessNum int    `toml:"logic_process_number"`
-	InputBuffer     int    `toml:"input_buffer"`
-	OutputBuffer    int    `toml:"output_buffer"`
-	BufferReportDuration int `toml:"buffer_report_duration"`
+	HttpPort             string `toml:"rest_api_port"`
+	DebugPort            string `toml:"debug_port"`
+	LogicProcessNum      int    `toml:"logic_process_number"`
+	InputBuffer          int    `toml:"input_buffer"`
+	OutputBuffer         int    `toml:"output_buffer"`
+	BufferReportDuration int    `toml:"buffer_report_duration"`
 
 	Log       Log
 	Kafka     Kafka
@@ -114,7 +114,7 @@ func main() {
 			time.Sleep(time.Second * time.Duration(cnf.BufferReportDuration))
 			log.WithFields(log.Fields{
 				"input": len(inputChannel),
-				"out": len(out),
+				"out":   len(out),
 			}).Info("channel fill length")
 		}
 	}()
@@ -218,11 +218,9 @@ func main() {
 			log.WithField("error", err.Error()).Fatal("init kafka consumer failed")
 		}
 
-		go func() {
-			if err := kafkaConsumer.Listen(inputChannel, out); err != nil {
-				log.WithField("error", err.Error()).Fatal("kafka consumer listening error")
-			}
-		}()
+		if err := kafkaConsumer.Listen(inputChannel, out); err != nil {
+			log.WithField("error", err.Error()).Fatal("kafka consumer listening error")
+		}
 	}
 
 	// Rest api

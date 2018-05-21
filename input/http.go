@@ -50,6 +50,9 @@ func v1PostAnnounceChannelHandler(ctx *fasthttp.RequestCtx, inputChannel chan<- 
 		return
 	}
 
+	ctx.SetStatusCode(http.StatusOK)
+	return
+
 	var input announceChannelRequest
 	if err := json.Unmarshal(ctx.Request.Body(), &input); err != nil {
 		log.WithField("bad request", ctx.Request.Body()).Error()
