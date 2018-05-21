@@ -11,6 +11,7 @@ import (
 	"github.com/wvanbergen/kafka/consumergroup"
 	"math/rand"
 	"time"
+	"fmt"
 )
 
 type KafkaConsumer struct {
@@ -93,6 +94,7 @@ type kafkaMsg struct {
 	ChannelID string   `json:"channel_id"`
 	Usernames []string `json:"usernames"`
 	Message   string   `json:"message"`
+	template []byte
 }
 
 func (kc *KafkaConsumer) Listen(inputChannel chan<- *logic.ChannelAct, outputChannel chan<- *output.Msg) (err error) {
@@ -100,61 +102,63 @@ func (kc *KafkaConsumer) Listen(inputChannel chan<- *logic.ChannelAct, outputCha
 		return err
 	}
 
-	go kc.tickOffsetCommitter()
-
+	req := &kafkaMsg{}
 	for message := range kc.consumerGroup.Messages() {
-		req := &kafkaMsg{}
-		if err := json.Unmarshal(message.Value, req); err != nil {
-			log.Error("kafka request json unmarshal error: ", err.Error())
-			continue
-		}
+		if err := SaramMessageUnmarshal(message, req); err != nil {
+			log.WithField("error", err.Error()).
+				Error("kafka input request")
 
-		mstTemp, err := base64.StdEncoding.DecodeString(req.Message)
-		if err != nil {
-			log.Error("kafka request base64 convert error: ", err.Error())
+			kc.consumerGroup.CommitUpto(message)
 			continue
 		}
 
 		if req.ChannelID != "" {
 			inputChannel <- &logic.ChannelAct{
-				MessageTemplate: string(mstTemp),
+				MessageTemplate: string(req.template),
 				ChannelID:       req.ChannelID,
 			}
 		} else {
 
-			if len(req.Usernames) < 1 {
-				log.Error("kafka request usernames len less than 1")
-			}
-
 			for _, user := range req.Usernames {
 				outputChannel <- &output.Msg{
-					Temp: string(mstTemp),
+					Temp: string(req.template),
 					User: user,
 				}
 			}
-
 		}
 
-		kc.lastMessage = message
+		kc.consumerGroup.CommitUpto(message)
 	}
 
 	return nil
 }
 
-func (kc *KafkaConsumer) tickOffsetCommitter() {
-	for range kc.commitTicker.C {
-		if kc.lastMessage != nil {
-			kc.consumerGroup.CommitUpto(kc.lastMessage)
-		}
+func SaramMessageUnmarshal(message *sarama.ConsumerMessage, msg *kafkaMsg) (err error) {
+	if err = json.Unmarshal(message.Value, msg); err != nil {
+		return errors.New(fmt.Sprintf("json unmarshal error %s", err.Error()))
 	}
+
+	if msg.Message == "" {
+		return errors.New("bad request")
+	}
+
+	msg.template, err = base64.StdEncoding.DecodeString(msg.Message)
+	if err != nil {
+		return errors.New(fmt.Sprintf("base64 convert error %s", err.Error()))
+	}
+
+	if msg.ChannelID == "" && len(msg.Usernames) < 1 ||
+		msg.ChannelID != "" && len(msg.Usernames) > 1 {
+			return errors.New("bad request")
+	}
+
+	return nil
 }
 
 func (kc *KafkaConsumer) Close() {
-	log.Warn("close kafka consumer")
-	kc.commitTicker.Stop()
+	log.Warn("kafka input close")
 
 	if kc.consumerGroup != nil {
-		kc.consumerGroup.CommitUpto(kc.lastMessage)
 		kc.consumerGroup.Close()
 	}
 }

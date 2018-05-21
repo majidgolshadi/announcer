@@ -7,7 +7,7 @@ import (
 
 type Cluster struct {
 	address []string
-	conn    []Ejabberd
+	conn    []EjabberdSender
 	retry   int
 }
 

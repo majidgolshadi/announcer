@@ -21,6 +21,7 @@ type config struct {
 	LogicProcessNum int    `toml:"logic_process_number"`
 	InputBuffer     int    `toml:"input_buffer"`
 	OutputBuffer    int    `toml:"output_buffer"`
+	BufferReportDuration int `toml:"buffer_report_duration"`
 
 	Log       Log
 	Kafka     Kafka
@@ -106,6 +107,17 @@ func main() {
 
 	out := make(chan *output.Msg, cnf.OutputBuffer)
 	defer close(out)
+
+	// Report
+	go func() {
+		for {
+			time.Sleep(time.Second * time.Duration(cnf.BufferReportDuration))
+			log.WithFields(log.Fields{
+				"input": len(inputChannel),
+				"out": len(out),
+			}).Info("channel fill length")
+		}
+	}()
 
 	// Output part
 	var cluster *output.Cluster
@@ -233,10 +245,8 @@ func initLogService(logConfig Log) {
 	switch logConfig.Format {
 	case "json":
 		log.SetFormatter(&log.JSONFormatter{})
-	case "text":
-		log.SetFormatter(&log.TextFormatter{})
 	default:
-		break
+		log.SetFormatter(&log.TextFormatter{})
 	}
 
 	if logConfig.LogPoint != "" {

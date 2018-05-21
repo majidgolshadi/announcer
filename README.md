@@ -14,11 +14,12 @@ rest_api_port=":8080" #Rest api interface and port listen on
 debug_port=":6060"
 input_buffer=100      #Input channel buffer
 output_buffer=100     #Output channel buffer
-logic_process_number=2#Increase logic concurrency
+logic_process_number=2      #Increase logic concurrency
+buffer_report_duration=1    #Report buffer fill length every X sec
 
 [log]
 log_level="debug"     #debug/info/warning/error (default: warning)
-format="text"         #json/text/logrous (defualt: logrous)
+format="text"         #json/text (defualt: text)
 
 [kafka]
 zookeeper="127.0.0.1:2181/"

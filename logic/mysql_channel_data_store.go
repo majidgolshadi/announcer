@@ -60,7 +60,7 @@ func (opt *MysqlOpt) init() error {
 	return nil
 }
 
-func NewMysqlChannelDataStore(opt *MysqlOpt) (ChannelDataStore, error) {
+func NewMysqlChannelDataStore(opt *MysqlOpt) (*mysql, error) {
 	if err := opt.init(); err != nil {
 		return nil, err
 	}

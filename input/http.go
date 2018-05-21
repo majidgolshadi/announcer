@@ -23,9 +23,9 @@ func RunHttpServer(port string, inputChannel chan<- *logic.ChannelAct, outputCha
 
 		switch string(ctx.Path()) {
 		case "/v1/announce/channel":
-			v1AnnounceChannelHandler(ctx, inputChannel)
+			v1PostAnnounceChannelHandler(ctx, inputChannel)
 		case "/v1/announce/users":
-			v1AnnounceUsersHandler(ctx, outputChannel)
+			v1PostAnnounceUsersHandler(ctx, outputChannel)
 		default:
 			ctx.Error(API_NOT_FOUND_MESSAGE, fasthttp.StatusNotFound)
 		}
@@ -34,7 +34,7 @@ func RunHttpServer(port string, inputChannel chan<- *logic.ChannelAct, outputCha
 			"method":        string(ctx.Method()),
 			"URI":           string(ctx.Path()),
 			"status":        ctx.Response.Header.StatusCode(),
-			"response time": time.Now().Sub(start).Seconds(),
+			"response_time": time.Now().Sub(start).Seconds(),
 		}).Info("rest api")
 	})
 }
@@ -44,7 +44,7 @@ type announceChannelRequest struct {
 	ChannelId string `json:"channel_id"`
 }
 
-func v1AnnounceChannelHandler(ctx *fasthttp.RequestCtx, inputChannel chan<- *logic.ChannelAct) {
+func v1PostAnnounceChannelHandler(ctx *fasthttp.RequestCtx, inputChannel chan<- *logic.ChannelAct) {
 	if string(ctx.Method()) != "POST" {
 		ctx.Error(API_NOT_FOUND_MESSAGE, fasthttp.StatusNotFound)
 		return
@@ -77,7 +77,7 @@ type announceUsersRequest struct {
 	Usernames []string `json:"usernames"`
 }
 
-func v1AnnounceUsersHandler(ctx *fasthttp.RequestCtx, outputChannel chan<- *output.Msg) {
+func v1PostAnnounceUsersHandler(ctx *fasthttp.RequestCtx, outputChannel chan<- *output.Msg) {
 	if string(ctx.Method()) != "POST" {
 		ctx.Error(API_NOT_FOUND_MESSAGE, fasthttp.StatusNotFound)
 		return

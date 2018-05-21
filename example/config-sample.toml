@@ -3,6 +3,7 @@ debug_port=":6060"
 input_buffer=100
 output_buffer=100
 logic_process_number=2
+buffer_report_duration=1
 
 [log]
 log_level="debug"
