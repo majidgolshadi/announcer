@@ -1,7 +1,6 @@
 package logic
 
 import (
-	"github.com/majidgolshadi/client-announcer/output"
 	"testing"
 )
 
@@ -29,7 +28,7 @@ func TestSentToSoroushChannelOnlineUser(t *testing.T) {
 		ChannelDataStore: NewMysqlMock(),
 	}
 
-	out := make(chan *output.Msg)
+	out := make(chan string)
 	count := 0
 	go func() {
 		for range out {
@@ -56,7 +55,7 @@ func TestSentToChannelWithNoOnlineUser(t *testing.T) {
 		ChannelDataStore: NewMysqlMock(),
 	}
 
-	out := make(chan *output.Msg)
+	out := make(chan string)
 	count := 0
 	go func() {
 		for range out {
@@ -83,16 +82,11 @@ func TestSentToChannelWithOnlineUser(t *testing.T) {
 		ChannelDataStore: NewMysqlMock(),
 	}
 
-	out := make(chan *output.Msg)
+	out := make(chan string)
 	msgTemplate := "<template to=%s></template>"
 	count := 0
 	go func() {
-		for msg := range out {
-			if msg.Temp != msgTemplate {
-				t.Log("invalid template")
-				t.Fail()
-			}
-
+		for range out {
 			count++
 		}
 	}()

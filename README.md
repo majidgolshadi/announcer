@@ -26,7 +26,6 @@ zookeeper="127.0.0.1:2181/"
 topics="test-topic"       #Multi topic can seperate with ','
 group_name="announcer"
 buffer=1000
-commit_offset_interval=10 #Notify zookeeper offset every commit_offset_interval message
 
 [mysql]
 address="127.0.0.1:3306"
@@ -160,6 +159,6 @@ Debugging rest APIs
 Call `http://<SERVER_IP>:<debug_port>/debug/pprof/trace?seconds=5` to get 5 second of application trace file and then you can see application trace. With
 `go tool trace <DOWNLOADED_FILE_PATH>` command you can see what's happen in application on that period of time
 
-Call `http://<SERVER_IP>:<debug_port>/debug/pprof/profile` to get service profile and then run `go tool pprof <DOWNLOADED_FILE_PATH>` command go see more details about application processes
+Call `http://<SERVER_IP>:<debug_port>/debug/pprof/profile` to get service profile and then run `go tool pprof <DOWNLOADED_FILE_PATH>` command go see more details about appli   cation processes
 
 To get more information you can see [How to use pprof](https://www.integralist.co.uk/posts/profiling-go/) article

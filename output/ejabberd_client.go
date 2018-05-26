@@ -98,10 +98,8 @@ func (ec *ejabberdClient) keepConnectionAlive() {
 	}
 }
 
-func (ec *ejabberdClient) Send(msg *Msg) error {
-	m := fmt.Sprintf(msg.Temp, fmt.Sprintf("%s@%s", msg.User, ec.opt.Domain))
-
-	if err := ec.conn.SendCustomMsg(m); err != nil {
+func (ec *ejabberdClient) Send(msg string) error {
+	if err := ec.conn.SendCustomMsg(msg); err != nil {
 		log.WithField("error", err.Error()).Error("client send error")
 		ec.Close()
 		ec.Connect()
@@ -109,7 +107,7 @@ func (ec *ejabberdClient) Send(msg *Msg) error {
 		return err
 	}
 
-	log.WithField("message", m).Debug("client message sent")
+	log.WithField("message", msg).Debug("client message sent")
 	return nil
 }
 

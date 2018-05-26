@@ -1,21 +1,21 @@
 version: '3'
 services:
-  zookeeper:
-    image: wurstmeister/zookeeper
-    ports:
-      - "2181:2181"
-  kafka:
-    image: wurstmeister/kafka
-    ports:
-      - "9092:9092"
-    depends_on:
-      - zookeeper
-    environment:
-      KAFKA_ADVERTISED_HOST_NAME: 192.168.90.29
-      KAFKA_CREATE_TOPICS: "test-topic:3:1"
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+#  zookeeper:
+#    image: wurstmeister/zookeeper
+#    ports:
+#      - "2181:2181"
+#  kafka:
+#    image: wurstmeister/kafka
+#    ports:
+#      - "9092:9092"
+#    depends_on:
+#      - zookeeper
+#    environment:
+#      KAFKA_ADVERTISED_HOST_NAME: 192.168.90.29:9092
+#      KAFKA_CREATE_TOPICS: "test-topic:3:1"
+#      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+#    volumes:
+#      - /var/run/docker.sock:/var/run/docker.sock
   ejabberd:
     image: rroemhild/ejabberd:17.01
     ports:
@@ -29,7 +29,7 @@ services:
     ports:
       - "6379:6379"
   mysql:
-    image: mysql:5.5
+    image: mysql:5.6
     ports:
       - "3306:3306"
     environment:

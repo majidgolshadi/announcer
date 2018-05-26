@@ -2,6 +2,6 @@ package output
 
 type EjabberdSender interface {
 	Connect() error
-	Send(msg *Msg) error
+	Send(msg string) error
 	Close()
 }

@@ -24,20 +24,28 @@ type config struct {
 	BufferReportDuration int    `toml:"buffer_report_duration"`
 
 	Log       Log
-	Kafka     Kafka
+	Mysql     Mysql
+	Redis     Redis
 	Ejabberd  Ejabberd
 	Client    Client
 	Component Component
-	Mysql     Mysql
-	Redis     Redis
+	KafkaConsumer     KafkaConsumer
+	KafkaProducer KafkaProducer
 }
 
-type Kafka struct {
+type KafkaConsumer struct {
 	Zookeeper            string `toml:"zookeeper"`
 	Topics               string `toml:"topics"`
 	GroupName            string `toml:"group_name"`
 	Buffer               int    `toml:"buffer"`
 	CommitOffsetInterval int    `toml:"commit_offset_interval"`
+}
+
+type KafkaProducer struct {
+	Brokers string `toml:"brokers"`
+	Topics string `toml:"topics"`
+	FlushFrequency int `toml:"flush_frequency"`
+	MaxRetry int `toml:"max_retry"`
 }
 
 type Log struct {
@@ -105,21 +113,38 @@ func main() {
 	inputChannel := make(chan *logic.ChannelAct, cnf.InputBuffer)
 	defer close(inputChannel)
 
-	out := make(chan *output.Msg, cnf.OutputBuffer)
+	inputUser := make(chan *logic.UserAct, cnf.InputBuffer)
+	defer close(inputUser)
+
+	out := make(chan string, cnf.OutputBuffer)
 	defer close(out)
 
+	outKafka := make(chan string, cnf.OutputBuffer)
+	defer close(outKafka)
+
+	///////////////////////////////////////////////////////////
 	// Report
+	///////////////////////////////////////////////////////////
 	go func() {
 		for {
 			time.Sleep(time.Second * time.Duration(cnf.BufferReportDuration))
-			log.WithFields(log.Fields{
-				"input": len(inputChannel),
-				"out":   len(out),
-			}).Info("channel fill length")
+			//log.WithFields(log.Fields{
+			//	"input": len(inputChannel),
+			//	"out":   len(out),
+			//}).Info("channel fill length")
 		}
 	}()
 
+	///////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////
 	// Output part
+	///////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////
+
+
+		///////////////////////////////////////////////////////////
+		// Ejabberd Component
+		///////////////////////////////////////////////////////////
 	var cluster *output.Cluster
 	if cnf.Component.Secret != "" {
 		cluster, err = output.NewComponentCluster(strings.Split(cnf.Ejabberd.ClusterNodes, ","),
@@ -131,6 +156,10 @@ func main() {
 				Domain:       cnf.Component.Domain,
 			})
 	} else {
+
+		///////////////////////////////////////////////////////////
+		// Ejabberd Client
+		///////////////////////////////////////////////////////////
 		cluster, err = output.NewClientCluster(strings.Split(cnf.Ejabberd.ClusterNodes, ","),
 			cnf.Ejabberd.SendRetry,
 			&output.EjabberdClientOpt{
@@ -148,7 +177,30 @@ func main() {
 
 	go cluster.ListenAndSend(time.Duration(cnf.Ejabberd.RateLimit), out)
 
+	///////////////////////////////////////////////////////////
+	// Kafka Producer
+	///////////////////////////////////////////////////////////
+	kafkaOpt := &output.KafkaProducerOpt{
+		Brokers: strings.Split(cnf.KafkaProducer.Brokers, ","),
+		Topics: strings.Split(cnf.KafkaProducer.Topics, ","),
+		FlushFrequency: time.Duration(cnf.KafkaProducer.FlushFrequency) * time.Second,
+		MaxRetry: cnf.KafkaProducer.MaxRetry,
+	}
+
+	kafkaProducer, err := output.NewKafkaProducer(kafkaOpt)
+	if err != nil {
+		log.WithField("error", err.Error()).Fatal("kafka producer connection error")
+	}
+
+	kafkaProducer.Listen(outKafka)
+
+	///////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////
 	// Logic part
+	///////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////
+
+	// Redis configuration
 	redis, err := logic.NewRedisUserDataStore(&logic.RedisOpt{
 		Address:     cnf.Redis.ClusterNodes,
 		Password:    cnf.Redis.Password,
@@ -161,6 +213,7 @@ func main() {
 		log.WithField("error", err.Error()).Fatal("redis connection failed")
 	}
 
+	// Mysql configuration
 	mysql, err := logic.NewMysqlChannelDataStore(&logic.MysqlOpt{
 		Address:       cnf.Mysql.Address,
 		Database:      cnf.Mysql.DB,
@@ -179,12 +232,16 @@ func main() {
 		log.Fatal("logic process number is less than 1")
 	}
 
+	///////////////////////////////////////////////////////////
+	// Channel actor
+	///////////////////////////////////////////////////////////
 	var logicProcesses []*logic.ChannelActor
 
 	for i := 0; i < cnf.LogicProcessNum; i++ {
 		channelActor := &logic.ChannelActor{
 			ChannelDataStore: mysql,
 			UserActivity:     redis,
+			Domain: cnf.Component.Domain,
 		}
 
 		logicProcesses = append(logicProcesses, channelActor)
@@ -198,18 +255,34 @@ func main() {
 		}
 	}()
 
+	///////////////////////////////////////////////////////////
+	// User actor
+	///////////////////////////////////////////////////////////
+	userActor := logic.UserActor{
+		Domain: cnf.Component.Domain,
+	}
+
+	go userActor.Listen(inputUser, out, outKafka)
+
+	///////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////
 	// Input part
-	// Kafka consumer
+	///////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////
+
+	///////////////////////////////////////////////////////////
+	// Kafka
+	///////////////////////////////////////////////////////////
 	var kafkaConsumer *input.KafkaConsumer
-	if cnf.Kafka.Zookeeper != "" {
-		zookeeper, zNode := kazoo.ParseConnectionString(cnf.Kafka.Zookeeper)
+	if cnf.KafkaConsumer.Zookeeper != "" {
+		zookeeper, zNode := kazoo.ParseConnectionString(cnf.KafkaConsumer.Zookeeper)
 		kafkaConsumer, err = input.NewKafkaConsumer(&input.KafkaConsumerOpt{
 			Zookeeper:            zookeeper,
 			ZNode:                zNode,
-			GroupName:            cnf.Kafka.GroupName,
-			CommitOffsetInterval: time.Duration(cnf.Kafka.CommitOffsetInterval),
-			Topics:               strings.Split(cnf.Kafka.Topics, ","),
-			ReadBufferSize:       cnf.Kafka.Buffer,
+			GroupName:            cnf.KafkaConsumer.GroupName,
+			Topics:               strings.Split(cnf.KafkaConsumer.Topics, ","),
+			ReadBufferSize:       cnf.KafkaConsumer.Buffer,
+			CommitOffsetInterval: time.Duration(cnf.KafkaConsumer.CommitOffsetInterval) * time.Second,
 		})
 
 		defer kafkaConsumer.Close()
@@ -218,13 +291,15 @@ func main() {
 			log.WithField("error", err.Error()).Fatal("init kafka consumer failed")
 		}
 
-		if err := kafkaConsumer.Listen(inputChannel, out); err != nil {
+		if err := kafkaConsumer.Listen(inputChannel, inputUser); err != nil {
 			log.WithField("error", err.Error()).Fatal("kafka consumer listening error")
 		}
 	}
 
-	// Rest api
-	input.RunHttpServer(cnf.HttpPort, inputChannel, out)
+	///////////////////////////////////////////////////////////
+	// HTTP Rest API
+	///////////////////////////////////////////////////////////
+	input.RunHttpServer(cnf.HttpPort, inputChannel, inputUser)
 }
 
 // TODO: Add tag for any application log

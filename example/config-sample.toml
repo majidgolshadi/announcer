@@ -14,7 +14,6 @@ zookeeper="127.0.0.1:2181/"
 topics="test-topic"
 group_name="announcer"
 buffer=1000
-commit_offset_interval=10
 
 [mysql]
 address="127.0.0.1:3306"

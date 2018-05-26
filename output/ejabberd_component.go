@@ -99,10 +99,8 @@ func generateMsgID(n int) string {
 	return string(b)
 }
 
-func (ec *ejabberdComponent) Send(msg *Msg) error {
-	m := fmt.Sprintf(msg.Temp, fmt.Sprintf("%s@%s", msg.User, ec.opt.Domain))
-
-	if _, err := ec.conn.Write([]byte(m)); err != nil {
+func (ec *ejabberdComponent) Send(msg string) error {
+	if _, err := ec.conn.Write([]byte(msg)); err != nil {
 		log.WithField("error", err.Error()).Error("component send error")
 		ec.Close()
 		ec.Connect()
@@ -110,7 +108,7 @@ func (ec *ejabberdComponent) Send(msg *Msg) error {
 		return err
 	}
 
-	log.WithField("message", m).Debug("component message sent")
+	log.WithField("message", msg).Debug("component message sent")
 	return nil
 }
 

@@ -1,9 +1,9 @@
 package logic
 
 import (
-	"github.com/majidgolshadi/client-announcer/output"
 	log "github.com/sirupsen/logrus"
 	"time"
+	"fmt"
 )
 
 type ChannelAct struct {
@@ -14,6 +14,7 @@ type ChannelAct struct {
 type ChannelActor struct {
 	UserActivity     UserActivity
 	ChannelDataStore ChannelDataStore
+	Domain string
 
 	monitChannelUserNum       int
 	monitChannelOnlineUserNum int
@@ -21,7 +22,7 @@ type ChannelActor struct {
 
 const SoroushChannelId = "officialsoroushchannel"
 
-func (ca *ChannelActor) Listen(chanAct <-chan *ChannelAct, msgChan chan<- *output.Msg) error {
+func (ca *ChannelActor) Listen(chanAct <-chan *ChannelAct, msgChan chan<- string) error {
 	var start time.Time
 
 	for rec := range chanAct {
@@ -44,7 +45,11 @@ func (ca *ChannelActor) Listen(chanAct <-chan *ChannelAct, msgChan chan<- *outpu
 	return nil
 }
 
-func (ca *ChannelActor) sentToOnlineUser(channelID string, template string, msgChan chan<- *output.Msg) error {
+func (ca *ChannelActor) createMessage(template string, user string) string {
+	return fmt.Sprintf(template, fmt.Sprintf("%s@%s", user, ca.Domain))
+}
+
+func (ca *ChannelActor) sentToOnlineUser(channelID string, template string, msgChan chan<- string) error {
 
 	// all users are soroush official channel members
 	if channelID == SoroushChannelId {
@@ -54,10 +59,7 @@ func (ca *ChannelActor) sentToOnlineUser(channelID string, template string, msgC
 		}
 
 		for user := range userChan {
-			msgChan <- &output.Msg{
-				Temp: template,
-				User: user,
-			}
+			msgChan <- ca.createMessage(template, user)
 		}
 
 		return nil
@@ -74,10 +76,7 @@ func (ca *ChannelActor) sentToOnlineUser(channelID string, template string, msgC
 		// Is he/she online
 		if ca.UserActivity.IsHeOnline(username) {
 			ca.monitChannelOnlineUserNum++
-			msgChan <- &output.Msg{
-				Temp: template,
-				User: username,
-			}
+			msgChan <- ca.createMessage(template, username)
 		}
 	}
 

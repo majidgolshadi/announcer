@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"github.com/Shopify/sarama"
 	"github.com/majidgolshadi/client-announcer/logic"
-	"github.com/majidgolshadi/client-announcer/output"
 	log "github.com/sirupsen/logrus"
 	"github.com/wvanbergen/kafka/consumergroup"
 	"math/rand"
@@ -54,10 +53,8 @@ func (opt *KafkaConsumerOpt) init() error {
 	}
 
 	if opt.CommitOffsetInterval == 0 {
-		opt.CommitOffsetInterval = 5
+		opt.CommitOffsetInterval = time.Second
 	}
-
-	opt.CommitOffsetInterval = opt.CommitOffsetInterval * time.Second
 
 	return nil
 }
@@ -71,21 +68,26 @@ func generateGroupName(n int) string {
 	return "AnnouncerConsumer_" + string(b)
 }
 
+func (opt *KafkaConsumerOpt) getSaramaConfig() *consumergroup.Config {
+	config := consumergroup.NewConfig()
+	config.ChannelBufferSize = opt.ReadBufferSize
+	config.Offsets.Initial = sarama.OffsetNewest
+	config.Offsets.CommitInterval = opt.CommitOffsetInterval
+	config.Zookeeper.Chroot = opt.ZNode
+	config.ChannelBufferSize = opt.ReadBufferSize
+
+	return config
+}
+
 func NewKafkaConsumer(option *KafkaConsumerOpt) (*KafkaConsumer, error) {
 	if err := option.init(); err != nil {
 		return nil, err
 	}
 
 	kc := &KafkaConsumer{
-		opt:          option,
-		commitTicker: time.NewTicker(option.CommitOffsetInterval),
+		opt:    option,
+		config: option.getSaramaConfig(),
 	}
-	kc.config = consumergroup.NewConfig()
-
-	kc.config.ChannelBufferSize = option.ReadBufferSize
-	kc.config.Offsets.Initial = sarama.OffsetNewest
-	kc.config.Zookeeper.Chroot = option.ZNode
-	kc.config.ChannelBufferSize = option.ReadBufferSize
 
 	return kc, nil
 }
@@ -97,23 +99,22 @@ type kafkaMsg struct {
 	template  []byte
 }
 
-func (kc *KafkaConsumer) Listen(inputChannel chan<- *logic.ChannelAct, outputChannel chan<- *output.Msg) (err error) {
+func (kc *KafkaConsumer) Listen(inputChannel chan<- *logic.ChannelAct, inputUser chan<- *logic.UserAct) (err error) {
 	if kc.consumerGroup, err = consumergroup.JoinConsumerGroup(kc.opt.GroupName, kc.opt.Topics, kc.opt.Zookeeper, kc.config); err != nil {
 		return err
 	}
 
-	go kc.action(kc.consumerGroup.Messages(), inputChannel, outputChannel)
+	go kc.action(kc.consumerGroup.Messages(), inputChannel, inputUser)
 	return nil
 }
 
-func (kc *KafkaConsumer) action(messageChannel <-chan *sarama.ConsumerMessage, inputChannel chan<- *logic.ChannelAct, outputChannel chan<- *output.Msg) {
+func (kc *KafkaConsumer) action(messageChannel <-chan *sarama.ConsumerMessage, inputChannel chan<- *logic.ChannelAct, inputUser chan<- *logic.UserAct) {
 	for message := range messageChannel {
 		req := &kafkaMsg{}
 		if err := saramMessageUnmarshal(message, req); err != nil {
 			log.WithField("error", err.Error()).
 				Error("kafka input request")
 
-			kc.consumerGroup.CommitUpto(message)
 			continue
 		}
 
@@ -123,16 +124,11 @@ func (kc *KafkaConsumer) action(messageChannel <-chan *sarama.ConsumerMessage, i
 				ChannelID:       req.ChannelID,
 			}
 		} else {
-
-			for _, user := range req.Usernames {
-				outputChannel <- &output.Msg{
-					Temp: string(req.template),
-					User: user,
-				}
+			inputUser <- &logic.UserAct{
+				MessageTemplate: string(req.template),
+				Usernames:       req.Usernames,
 			}
 		}
-
-		kc.consumerGroup.CommitUpto(message)
 	}
 }
 

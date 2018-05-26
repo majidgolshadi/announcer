@@ -11,11 +11,6 @@ type Cluster struct {
 	retry   int
 }
 
-type Msg struct {
-	Temp string
-	User string
-}
-
 func NewClientCluster(address []string, sendRetry int, opt *EjabberdClientOpt) (c *Cluster, err error) {
 	c = &Cluster{
 		address: address,
@@ -78,13 +73,13 @@ func NewComponentCluster(address []string, retry int, opt *EjabberdComponentOpt)
 }
 
 // Based on announcer usage it will be drop a message that it can't send, after retry on all connections and pause time
-func (c *Cluster) ListenAndSend(rateLimit time.Duration, messages chan *Msg) {
+func (c *Cluster) ListenAndSend(rateLimit time.Duration, messages chan string) {
 	sleepTime := time.Second / rateLimit
 	// For more that 1000000000 sleep time is zero
 	if sleepTime == 0 {
 		sleepTime = 1
 	}
-
+	log.Info("sleep ", sleepTime, " before each send")
 	ticker := time.NewTicker(sleepTime)
 
 	for msg := range messages {
@@ -93,7 +88,7 @@ func (c *Cluster) ListenAndSend(rateLimit time.Duration, messages chan *Msg) {
 	}
 }
 
-func (c *Cluster) sendWithRetry(msg *Msg) {
+func (c *Cluster) sendWithRetry(msg string) {
 	for i := 1; i < c.retry; i++ {
 		for _, conn := range c.conn {
 			if err := conn.Send(msg); err != nil {
@@ -109,7 +104,7 @@ func (c *Cluster) sendWithRetry(msg *Msg) {
 }
 
 func (c *Cluster) Close() {
-	log.Warn("close cluster connections...")
+	log.Warn("ejabberd cluster close")
 	for _, con := range c.conn {
 		con.Close()
 	}

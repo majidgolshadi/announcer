@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"github.com/majidgolshadi/client-announcer/logic"
-	"github.com/majidgolshadi/client-announcer/output"
 	log "github.com/sirupsen/logrus"
 	"github.com/valyala/fasthttp"
 	"net/http"
@@ -14,7 +13,7 @@ import (
 const API_NOT_FOUND_MESSAGE = "404 api not found"
 
 // based on https://github.com/gin-gonic/gin/issues/205 issue we can't have something like /announcer/:announcer_name/send/
-func RunHttpServer(port string, inputChannel chan<- *logic.ChannelAct, outputChannel chan<- *output.Msg) error {
+func RunHttpServer(port string, inputChannel chan<- *logic.ChannelAct, inputUser chan<- *logic.UserAct) error {
 	log.Info("rest api server listening on port ", port)
 
 	return fasthttp.ListenAndServe(port, func(ctx *fasthttp.RequestCtx) {
@@ -25,7 +24,7 @@ func RunHttpServer(port string, inputChannel chan<- *logic.ChannelAct, outputCha
 		case "/v1/announce/channel":
 			v1PostAnnounceChannelHandler(ctx, inputChannel)
 		case "/v1/announce/users":
-			v1PostAnnounceUsersHandler(ctx, outputChannel)
+			v1PostAnnounceUsersHandler(ctx, inputUser)
 		default:
 			ctx.Error(API_NOT_FOUND_MESSAGE, fasthttp.StatusNotFound)
 		}
@@ -49,9 +48,6 @@ func v1PostAnnounceChannelHandler(ctx *fasthttp.RequestCtx, inputChannel chan<- 
 		ctx.Error(API_NOT_FOUND_MESSAGE, fasthttp.StatusNotFound)
 		return
 	}
-
-	ctx.SetStatusCode(http.StatusOK)
-	return
 
 	var input announceChannelRequest
 	if err := json.Unmarshal(ctx.Request.Body(), &input); err != nil {
@@ -80,7 +76,7 @@ type announceUsersRequest struct {
 	Usernames []string `json:"usernames"`
 }
 
-func v1PostAnnounceUsersHandler(ctx *fasthttp.RequestCtx, outputChannel chan<- *output.Msg) {
+func v1PostAnnounceUsersHandler(ctx *fasthttp.RequestCtx, inputUser chan<- *logic.UserAct) {
 	if string(ctx.Method()) != "POST" {
 		ctx.Error(API_NOT_FOUND_MESSAGE, fasthttp.StatusNotFound)
 		return
@@ -105,15 +101,10 @@ func v1PostAnnounceUsersHandler(ctx *fasthttp.RequestCtx, outputChannel chan<- *
 		return
 	}
 
-	go func() {
-		messageTemplate := string(msgTmp)
-		for _, username := range input.Usernames {
-			outputChannel <- &output.Msg{
-				Temp: messageTemplate,
-				User: username,
-			}
-		}
-	}()
+	inputUser <- &logic.UserAct{
+		MessageTemplate: string(msgTmp),
+		Usernames:       input.Usernames,
+	}
 
 	ctx.SetStatusCode(http.StatusOK)
 }
