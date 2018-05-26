@@ -15,7 +15,7 @@ func (ua *UserActor) Listen(userAct <-chan *UserAct, msgChan chan<- string, kafk
 	var message string
 
 	for rec := range userAct {
-		for user := range rec.Usernames {
+		for _,user := range rec.Usernames {
 			// TODO: Create, validate, marshal and unmarshal message must be move into a struct
 			// message creator
 			message = fmt.Sprintf(rec.MessageTemplate, fmt.Sprintf("%s@%s", user, ua.Domain))

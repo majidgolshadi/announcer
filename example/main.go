@@ -29,8 +29,8 @@ type config struct {
 	Ejabberd      Ejabberd
 	Client        Client
 	Component     Component
-	KafkaConsumer KafkaConsumer
-	KafkaProducer KafkaProducer
+	KafkaConsumer KafkaConsumer `toml:"kafka-consumer"`
+	KafkaProducer KafkaProducer `toml:"kafka-producer"`
 }
 
 type KafkaConsumer struct {
@@ -130,7 +130,8 @@ func main() {
 			time.Sleep(time.Second * time.Duration(cnf.BufferReportDuration))
 			//log.WithFields(log.Fields{
 			//	"input": len(inputChannel),
-			//	"out":   len(out),
+			//	"outChat":   len(out),
+			//	"outKafka":   len(outKafka),
 			//}).Info("channel fill length")
 		}
 	}()
@@ -175,6 +176,7 @@ func main() {
 	}
 
 	go cluster.ListenAndSend(time.Duration(cnf.Ejabberd.RateLimit), out)
+	defer cluster.Close()
 
 	///////////////////////////////////////////////////////////
 	// Kafka Producer
@@ -188,10 +190,14 @@ func main() {
 
 	kafkaProducer, err := output.NewKafkaProducer(kafkaOpt)
 	if err != nil {
+		log.WithField("error", err.Error()).Fatal("kafka producer configuration error")
+	}
+
+	if err := kafkaProducer.Listen(outKafka); err != nil {
 		log.WithField("error", err.Error()).Fatal("kafka producer connection error")
 	}
 
-	kafkaProducer.Listen(outKafka)
+	defer kafkaProducer.Close()
 
 	///////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////

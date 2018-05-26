@@ -104,6 +104,8 @@ func (kc *KafkaConsumer) Listen(inputChannel chan<- *logic.ChannelAct, inputUser
 		return err
 	}
 
+	log.Info("kafka consumer connection established")
+
 	go kc.action(kc.consumerGroup.Messages(), inputChannel, inputUser)
 	return nil
 }
@@ -113,7 +115,7 @@ func (kc *KafkaConsumer) action(messageChannel <-chan *sarama.ConsumerMessage, i
 		req := &kafkaMsg{}
 		if err := saramMessageUnmarshal(message, req); err != nil {
 			log.WithField("error", err.Error()).
-				Error("kafka input request")
+				Error("kafka consumer request")
 
 			continue
 		}
@@ -155,7 +157,7 @@ func saramMessageUnmarshal(message *sarama.ConsumerMessage, msg *kafkaMsg) (err 
 }
 
 func (kc *KafkaConsumer) Close() {
-	log.Warn("kafka input close")
+	log.Warn("kafka consumer close")
 
 	if kc.consumerGroup != nil {
 		kc.consumerGroup.Close()

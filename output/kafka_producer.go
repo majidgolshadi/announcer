@@ -63,6 +63,8 @@ func (kp *KafkaProducer) Listen(messages <-chan string) (err error) {
 		return err
 	}
 
+	log.Info("kafka producer connection established")
+
 	go kp.activeErrorEventListener()
 	go kp.activeSuccessEventListener()
 	go kp.action(messages)
