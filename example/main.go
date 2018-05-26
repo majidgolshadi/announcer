@@ -23,13 +23,13 @@ type config struct {
 	OutputBuffer         int    `toml:"output_buffer"`
 	BufferReportDuration int    `toml:"buffer_report_duration"`
 
-	Log       Log
-	Mysql     Mysql
-	Redis     Redis
-	Ejabberd  Ejabberd
-	Client    Client
-	Component Component
-	KafkaConsumer     KafkaConsumer
+	Log           Log
+	Mysql         Mysql
+	Redis         Redis
+	Ejabberd      Ejabberd
+	Client        Client
+	Component     Component
+	KafkaConsumer KafkaConsumer
 	KafkaProducer KafkaProducer
 }
 
@@ -42,10 +42,10 @@ type KafkaConsumer struct {
 }
 
 type KafkaProducer struct {
-	Brokers string `toml:"brokers"`
-	Topics string `toml:"topics"`
-	FlushFrequency int `toml:"flush_frequency"`
-	MaxRetry int `toml:"max_retry"`
+	Brokers        string `toml:"brokers"`
+	Topics         string `toml:"topics"`
+	FlushFrequency int    `toml:"flush_frequency"`
+	MaxRetry       int    `toml:"max_retry"`
 }
 
 type Log struct {
@@ -141,10 +141,9 @@ func main() {
 	///////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////
 
-
-		///////////////////////////////////////////////////////////
-		// Ejabberd Component
-		///////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////
+	// Ejabberd Component
+	///////////////////////////////////////////////////////////
 	var cluster *output.Cluster
 	if cnf.Component.Secret != "" {
 		cluster, err = output.NewComponentCluster(strings.Split(cnf.Ejabberd.ClusterNodes, ","),
@@ -181,10 +180,10 @@ func main() {
 	// Kafka Producer
 	///////////////////////////////////////////////////////////
 	kafkaOpt := &output.KafkaProducerOpt{
-		Brokers: strings.Split(cnf.KafkaProducer.Brokers, ","),
-		Topics: strings.Split(cnf.KafkaProducer.Topics, ","),
+		Brokers:        strings.Split(cnf.KafkaProducer.Brokers, ","),
+		Topics:         strings.Split(cnf.KafkaProducer.Topics, ","),
 		FlushFrequency: time.Duration(cnf.KafkaProducer.FlushFrequency) * time.Second,
-		MaxRetry: cnf.KafkaProducer.MaxRetry,
+		MaxRetry:       cnf.KafkaProducer.MaxRetry,
 	}
 
 	kafkaProducer, err := output.NewKafkaProducer(kafkaOpt)
@@ -241,7 +240,7 @@ func main() {
 		channelActor := &logic.ChannelActor{
 			ChannelDataStore: mysql,
 			UserActivity:     redis,
-			Domain: cnf.Component.Domain,
+			Domain:           cnf.Component.Domain,
 		}
 
 		logicProcesses = append(logicProcesses, channelActor)

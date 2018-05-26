@@ -27,8 +27,8 @@ type MysqlOpt struct {
 	CheckInterval time.Duration
 }
 
-const ChannelIDQuery = `select channel_id from ws_channel_data where channel_state="ACCEPTED" and channel_channelid="%s"`
-const UsersChannelUsernameQuery = `select member_username from ws_channel_members where member_channelid="%s" limit %d,%d`
+const ChannelIDQuery = `SELECT channel_id FROM ws_channel_data WHERE channel_state="ACCEPTED" AND channel_channelid="%s"`
+const UsersChannelUsernameQuery = `SELECT member_id,member_username FROM ws_channel_members WHERE member_channelid="%s" AND member_id > %d LIMIT %d`
 
 func (opt *MysqlOpt) init() error {
 	if opt.Database == "" {
@@ -120,15 +120,14 @@ func (ms *mysql) GetChannelMembers(channelID string) (username <-chan string, er
 
 	// Fetch channel users
 	go func() error {
+		var memberId int
 		var username string
-		emptyFlag := false
 		var startMysqlQueryTime time.Time
 
-		for offset := 0; !emptyFlag; offset = offset + ms.opt.PageLength {
-			emptyFlag = true
+		for emptyFlag := true; !emptyFlag; emptyFlag = true {
 
 			startMysqlQueryTime = time.Now()
-			rows, err := ms.conn.Query(fmt.Sprintf(UsersChannelUsernameQuery, id, offset, ms.opt.PageLength))
+			rows, err := ms.conn.Query(fmt.Sprintf(UsersChannelUsernameQuery, id, memberId, ms.opt.PageLength))
 			log.Debug("mysql time: ", time.Now().Sub(startMysqlQueryTime).Seconds())
 
 			if err != nil {
@@ -139,7 +138,7 @@ func (ms *mysql) GetChannelMembers(channelID string) (username <-chan string, er
 			// report each on to up layer
 			for rows.Next() {
 				emptyFlag = false
-				if err := rows.Scan(&username); err != nil {
+				if err := rows.Scan(&memberId, &username); err != nil {
 					log.Error("mysql scan row error: ", err.Error())
 					continue
 				}

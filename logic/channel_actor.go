@@ -1,9 +1,9 @@
 package logic
 
 import (
+	"fmt"
 	log "github.com/sirupsen/logrus"
 	"time"
-	"fmt"
 )
 
 type ChannelAct struct {
@@ -14,7 +14,7 @@ type ChannelAct struct {
 type ChannelActor struct {
 	UserActivity     UserActivity
 	ChannelDataStore ChannelDataStore
-	Domain string
+	Domain           string
 
 	monitChannelUserNum       int
 	monitChannelOnlineUserNum int
