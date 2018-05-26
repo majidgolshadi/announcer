@@ -24,6 +24,8 @@ type EjabberdComponentOpt struct {
 	Domain       string
 }
 
+const PingIq = "<iq to='%s' type='get' id='%s'><ping xmlns='urn:xmpp:ping'/></iq>"
+
 func (opt *EjabberdComponentOpt) init() error {
 	if opt.Name == "" {
 		return errors.New("name does not set")
@@ -84,7 +86,7 @@ func (ec *ejabberdComponent) Connect() (err error) {
 
 func (ec *ejabberdComponent) keepConnectionAlive() {
 	for range ec.checkConnTicker.C {
-		ec.conn.Send(fmt.Sprintf("<iq to='%s' type='get' id='%s'><ping xmlns='urn:xmpp:ping'/></iq>", ec.opt.Domain, generateMsgID(5)))
+		ec.conn.Send(fmt.Sprintf(PingIq, ec.opt.Domain, generateMsgID(5)))
 	}
 }
 

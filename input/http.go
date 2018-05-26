@@ -4,16 +4,17 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"github.com/majidgolshadi/client-announcer/logic"
+	"github.com/majidgolshadi/client-announcer/output"
 	log "github.com/sirupsen/logrus"
 	"github.com/valyala/fasthttp"
 	"net/http"
 	"time"
 )
 
-const API_NOT_FOUND_MESSAGE = "404 api not found"
+const ApiNotFoundMessage = "404 api not found"
 
 // based on https://github.com/gin-gonic/gin/issues/205 issue we can't have something like /announcer/:announcer_name/send/
-func RunHttpServer(port string, inputChannel chan<- *logic.ChannelAct, inputUser chan<- *logic.UserAct) error {
+func RunHttpServer(port string, inputChannel chan<- *logic.ChannelAct, inputChat chan<- *output.Message) error {
 	log.Info("rest api server listening on port ", port)
 
 	return fasthttp.ListenAndServe(port, func(ctx *fasthttp.RequestCtx) {
@@ -24,9 +25,9 @@ func RunHttpServer(port string, inputChannel chan<- *logic.ChannelAct, inputUser
 		case "/v1/announce/channel":
 			v1PostAnnounceChannelHandler(ctx, inputChannel)
 		case "/v1/announce/users":
-			v1PostAnnounceUsersHandler(ctx, inputUser)
+			v1PostAnnounceUsersHandler(ctx, inputChat)
 		default:
-			ctx.Error(API_NOT_FOUND_MESSAGE, fasthttp.StatusNotFound)
+			ctx.Error(ApiNotFoundMessage, fasthttp.StatusNotFound)
 		}
 
 		log.WithFields(log.Fields{
@@ -45,7 +46,7 @@ type announceChannelRequest struct {
 
 func v1PostAnnounceChannelHandler(ctx *fasthttp.RequestCtx, inputChannel chan<- *logic.ChannelAct) {
 	if string(ctx.Method()) != "POST" {
-		ctx.Error(API_NOT_FOUND_MESSAGE, fasthttp.StatusNotFound)
+		ctx.Error(ApiNotFoundMessage, fasthttp.StatusNotFound)
 		return
 	}
 
@@ -76,9 +77,9 @@ type announceUsersRequest struct {
 	Usernames []string `json:"usernames"`
 }
 
-func v1PostAnnounceUsersHandler(ctx *fasthttp.RequestCtx, inputUser chan<- *logic.UserAct) {
+func v1PostAnnounceUsersHandler(ctx *fasthttp.RequestCtx, inputChat chan<- *output.Message) {
 	if string(ctx.Method()) != "POST" {
-		ctx.Error(API_NOT_FOUND_MESSAGE, fasthttp.StatusNotFound)
+		ctx.Error(ApiNotFoundMessage, fasthttp.StatusNotFound)
 		return
 	}
 
@@ -101,9 +102,12 @@ func v1PostAnnounceUsersHandler(ctx *fasthttp.RequestCtx, inputUser chan<- *logi
 		return
 	}
 
-	inputUser <- &logic.UserAct{
-		MessageTemplate: string(msgTmp),
-		Usernames:       input.Usernames,
+	for _, username := range input.Usernames {
+		inputChat <- &output.Message{
+			Template: string(msgTmp),
+			Username: username,
+			Loggable: true,
+		}
 	}
 
 	ctx.SetStatusCode(http.StatusOK)

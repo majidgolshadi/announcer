@@ -1,7 +1,7 @@
 package logic
 
 import (
-	"fmt"
+	"github.com/majidgolshadi/client-announcer/output"
 	log "github.com/sirupsen/logrus"
 	"time"
 )
@@ -14,7 +14,6 @@ type ChannelAct struct {
 type ChannelActor struct {
 	UserActivity     UserActivity
 	ChannelDataStore ChannelDataStore
-	Domain           string
 
 	monitChannelUserNum       int
 	monitChannelOnlineUserNum int
@@ -22,7 +21,7 @@ type ChannelActor struct {
 
 const SoroushChannelId = "officialsoroushchannel"
 
-func (ca *ChannelActor) Listen(chanAct <-chan *ChannelAct, msgChan chan<- string) error {
+func (ca *ChannelActor) Listen(chanAct <-chan *ChannelAct, msgChan chan<- *output.Message) error {
 	var start time.Time
 
 	for rec := range chanAct {
@@ -45,11 +44,7 @@ func (ca *ChannelActor) Listen(chanAct <-chan *ChannelAct, msgChan chan<- string
 	return nil
 }
 
-func (ca *ChannelActor) createMessage(template string, user string) string {
-	return fmt.Sprintf(template, fmt.Sprintf("%s@%s", user, ca.Domain))
-}
-
-func (ca *ChannelActor) sentToOnlineUser(channelID string, template string, msgChan chan<- string) error {
+func (ca *ChannelActor) sentToOnlineUser(channelID string, template string, msgChan chan<- *output.Message) error {
 
 	// all users are soroush official channel members
 	if channelID == SoroushChannelId {
@@ -58,8 +53,12 @@ func (ca *ChannelActor) sentToOnlineUser(channelID string, template string, msgC
 			return err
 		}
 
-		for user := range userChan {
-			msgChan <- ca.createMessage(template, user)
+		for username := range userChan {
+			msgChan <- &output.Message{
+				Template: template,
+				Username: username,
+				Loggable: false,
+			}
 		}
 
 		return nil
@@ -76,7 +75,11 @@ func (ca *ChannelActor) sentToOnlineUser(channelID string, template string, msgC
 		// Is he/she online
 		if ca.UserActivity.IsHeOnline(username) {
 			ca.monitChannelOnlineUserNum++
-			msgChan <- ca.createMessage(template, username)
+			msgChan <- &output.Message{
+				Template: template,
+				Username: username,
+				Loggable: false,
+			}
 		}
 	}
 

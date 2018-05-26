@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/Shopify/sarama"
 	"github.com/majidgolshadi/client-announcer/logic"
+	"github.com/majidgolshadi/client-announcer/output"
 	log "github.com/sirupsen/logrus"
 	"github.com/wvanbergen/kafka/consumergroup"
 	"math/rand"
@@ -99,18 +100,18 @@ type kafkaMsg struct {
 	template  []byte
 }
 
-func (kc *KafkaConsumer) Listen(inputChannel chan<- *logic.ChannelAct, inputUser chan<- *logic.UserAct) (err error) {
+func (kc *KafkaConsumer) Listen(inputChannel chan<- *logic.ChannelAct, inputChat chan<- *output.Message) (err error) {
 	if kc.consumerGroup, err = consumergroup.JoinConsumerGroup(kc.opt.GroupName, kc.opt.Topics, kc.opt.Zookeeper, kc.config); err != nil {
 		return err
 	}
 
 	log.Info("kafka consumer connection established")
 
-	go kc.action(kc.consumerGroup.Messages(), inputChannel, inputUser)
+	go kc.action(kc.consumerGroup.Messages(), inputChannel, inputChat)
 	return nil
 }
 
-func (kc *KafkaConsumer) action(messageChannel <-chan *sarama.ConsumerMessage, inputChannel chan<- *logic.ChannelAct, inputUser chan<- *logic.UserAct) {
+func (kc *KafkaConsumer) action(messageChannel <-chan *sarama.ConsumerMessage, inputChannel chan<- *logic.ChannelAct, inputChat chan<- *output.Message) {
 	for message := range messageChannel {
 		req := &kafkaMsg{}
 		if err := saramMessageUnmarshal(message, req); err != nil {
@@ -126,10 +127,15 @@ func (kc *KafkaConsumer) action(messageChannel <-chan *sarama.ConsumerMessage, i
 				ChannelID:       req.ChannelID,
 			}
 		} else {
-			inputUser <- &logic.UserAct{
-				MessageTemplate: string(req.template),
-				Usernames:       req.Usernames,
-			}
+			go func() {
+				for _, username := range req.Usernames {
+					inputChat <- &output.Message{
+						Template: string(req.template),
+						Username: username,
+						Loggable: true,
+					}
+				}
+			}()
 		}
 	}
 }

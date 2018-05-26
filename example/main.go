@@ -113,14 +113,11 @@ func main() {
 	inputChannel := make(chan *logic.ChannelAct, cnf.InputBuffer)
 	defer close(inputChannel)
 
-	inputUser := make(chan *logic.UserAct, cnf.InputBuffer)
-	defer close(inputUser)
+	inChat := make(chan *output.Message, cnf.OutputBuffer)
+	defer close(inChat)
 
-	out := make(chan string, cnf.OutputBuffer)
-	defer close(out)
-
-	outKafka := make(chan string, cnf.OutputBuffer)
-	defer close(outKafka)
+	inKafka := make(chan string, cnf.OutputBuffer)
+	defer close(inKafka)
 
 	///////////////////////////////////////////////////////////
 	// Report
@@ -128,11 +125,11 @@ func main() {
 	go func() {
 		for {
 			time.Sleep(time.Second * time.Duration(cnf.BufferReportDuration))
-			//log.WithFields(log.Fields{
-			//	"input": len(inputChannel),
-			//	"outChat":   len(out),
-			//	"outKafka":   len(outKafka),
-			//}).Info("channel fill length")
+			log.WithFields(log.Fields{
+				"input":    len(inputChannel),
+				"outChat":  len(inChat),
+				"outKafka": len(inKafka),
+			}).Info("channel fill length")
 		}
 	}()
 
@@ -175,7 +172,7 @@ func main() {
 		log.WithField("error", err.Error()).Fatal("cluster connecting error")
 	}
 
-	go cluster.ListenAndSend(time.Duration(cnf.Ejabberd.RateLimit), out)
+	go cluster.ListenAndSend(time.Duration(cnf.Ejabberd.RateLimit), inChat, inKafka)
 	defer cluster.Close()
 
 	///////////////////////////////////////////////////////////
@@ -193,7 +190,7 @@ func main() {
 		log.WithField("error", err.Error()).Fatal("kafka producer configuration error")
 	}
 
-	if err := kafkaProducer.Listen(outKafka); err != nil {
+	if err := kafkaProducer.Listen(inKafka); err != nil {
 		log.WithField("error", err.Error()).Fatal("kafka producer connection error")
 	}
 
@@ -246,12 +243,11 @@ func main() {
 		channelActor := &logic.ChannelActor{
 			ChannelDataStore: mysql,
 			UserActivity:     redis,
-			Domain:           cnf.Component.Domain,
 		}
 
 		logicProcesses = append(logicProcesses, channelActor)
 
-		go channelActor.Listen(inputChannel, out)
+		go channelActor.Listen(inputChannel, inChat)
 	}
 
 	defer func() {
@@ -259,15 +255,6 @@ func main() {
 			logicProcesses[index].Close()
 		}
 	}()
-
-	///////////////////////////////////////////////////////////
-	// User actor
-	///////////////////////////////////////////////////////////
-	userActor := logic.UserActor{
-		Domain: cnf.Component.Domain,
-	}
-
-	go userActor.Listen(inputUser, out, outKafka)
 
 	///////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////
@@ -296,7 +283,7 @@ func main() {
 			log.WithField("error", err.Error()).Fatal("init kafka consumer failed")
 		}
 
-		if err := kafkaConsumer.Listen(inputChannel, inputUser); err != nil {
+		if err := kafkaConsumer.Listen(inputChannel, inChat); err != nil {
 			log.WithField("error", err.Error()).Fatal("kafka consumer listening error")
 		}
 	}
@@ -304,7 +291,7 @@ func main() {
 	///////////////////////////////////////////////////////////
 	// HTTP Rest API
 	///////////////////////////////////////////////////////////
-	input.RunHttpServer(cnf.HttpPort, inputChannel, inputUser)
+	input.RunHttpServer(cnf.HttpPort, inputChannel, inChat)
 }
 
 // TODO: Add tag for any application log

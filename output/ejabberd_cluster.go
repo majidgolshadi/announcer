@@ -1,6 +1,7 @@
 package output
 
 import (
+	"fmt"
 	log "github.com/sirupsen/logrus"
 	"time"
 )
@@ -9,6 +10,17 @@ type Cluster struct {
 	address []string
 	conn    []EjabberdSender
 	retry   int
+	domain  string
+}
+
+type Message struct {
+	Template string
+	Username string
+	Loggable bool
+}
+
+func (msg *Message) toString(domain string) string {
+	return fmt.Sprintf(msg.Template, fmt.Sprintf("%s@%s", msg.Username, domain))
 }
 
 func NewClientCluster(address []string, sendRetry int, opt *EjabberdClientOpt) (c *Cluster, err error) {
@@ -39,6 +51,7 @@ func NewClientCluster(address []string, sendRetry int, opt *EjabberdClientOpt) (
 		c.conn = append(c.conn, client)
 	}
 
+	c.domain = opt.Domain
 	return c, nil
 }
 
@@ -69,11 +82,12 @@ func NewComponentCluster(address []string, retry int, opt *EjabberdComponentOpt)
 		c.conn = append(c.conn, com)
 	}
 
+	c.domain = opt.Domain
 	return c, nil
 }
 
 // Based on announcer usage it will be drop a message that it can't send, after retry on all connections and pause time
-func (c *Cluster) ListenAndSend(rateLimit time.Duration, messages chan string) {
+func (c *Cluster) ListenAndSend(rateLimit time.Duration, messages <-chan *Message, kafkaChan chan<- string) {
 	sleepTime := time.Second / rateLimit
 	// For more that 1000000000 sleep time is zero
 	if sleepTime == 0 {
@@ -84,7 +98,11 @@ func (c *Cluster) ListenAndSend(rateLimit time.Duration, messages chan string) {
 
 	for msg := range messages {
 		<-ticker.C
-		c.sendWithRetry(msg)
+		if msg.Loggable {
+			kafkaChan <- msg.toString(c.domain)
+		}
+
+		c.sendWithRetry(msg.toString(c.domain))
 	}
 }
 
