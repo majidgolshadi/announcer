@@ -105,8 +105,6 @@ func (ms *mysql) keepConnectionAlive() {
 }
 
 func (ms *mysql) GetChannelMembers(channelID string) (username <-chan string, err error) {
-	usernameChan := make(chan string)
-
 	// get channel id
 	row := ms.conn.QueryRow(fmt.Sprintf(ChannelIDQuery, channelID))
 	if row == nil {
@@ -118,43 +116,42 @@ func (ms *mysql) GetChannelMembers(channelID string) (username <-chan string, er
 		return nil, err
 	}
 
-	// Fetch channel users
-	go func() error {
-		var memberId int
-		var username string
-		var startMysqlQueryTime time.Time
+	usernameChan := make(chan string)
 
-		for emptyFlag := true; !emptyFlag; emptyFlag = true {
+	go func() {
+		lastSeenMemberId := 0
 
-			startMysqlQueryTime = time.Now()
-			rows, err := ms.conn.Query(fmt.Sprintf(UsersChannelUsernameQuery, id, memberId, ms.opt.PageLength))
-			log.Debug("mysql time: ", time.Now().Sub(startMysqlQueryTime).Seconds())
+		for rowCount := ms.opt.PageLength; rowCount >= ms.opt.PageLength ; {
+			rows, err := ms.conn.Query(fmt.Sprintf(UsersChannelUsernameQuery, id, lastSeenMemberId, ms.opt.PageLength))
 
 			if err != nil {
 				log.Error("mysql query execution error: ", err.Error())
 				break
 			}
 
-			// report each on to up layer
-			for rows.Next() {
-				emptyFlag = false
-				if err := rows.Scan(&memberId, &username); err != nil {
-					log.Error("mysql scan row error: ", err.Error())
-					continue
-				}
-
-				usernameChan <- username
-			}
-
+			lastSeenMemberId, rowCount = scanRows(rows, usernameChan)
 			rows.Close()
 		}
 
 		close(usernameChan)
-		return nil
 	}()
 
 	return usernameChan, nil
+}
 
+func scanRows(rows *sql.Rows, usernameChan <-chan string) (lastMemberId int, count int) {
+	username := ""
+	for rows.Next() {
+
+		if err := rows.Scan(&lastMemberId, &username); err != nil {
+			log.Error("mysql scan row error: ", err.Error())
+		}
+
+		count++
+		usernameChan <- username
+	}
+
+	return
 }
 
 func (ms *mysql) Close() {
