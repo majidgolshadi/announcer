@@ -52,13 +52,13 @@ func v1PostAnnounceChannelHandler(ctx *fasthttp.RequestCtx, inputChannel chan<- 
 
 	var input announceChannelRequest
 	if err := json.Unmarshal(ctx.Request.Body(), &input); err != nil {
-		log.WithField("bad request", err.Error()).Error()
+		log.WithField("bad request", err.Error()).Error("channel rest api")
 		ctx.SetStatusCode(fasthttp.StatusBadRequest)
 		return
 	}
 
 	if input.ChannelId == "" {
-		log.WithField("bad request", "channel id is empty").Error()
+		log.WithField("bad request", "channel id is empty").Error("channel rest api")
 		ctx.SetStatusCode(fasthttp.StatusBadRequest)
 		return
 	}
@@ -91,7 +91,7 @@ func v1PostAnnounceUsersHandler(ctx *fasthttp.RequestCtx, inputChat chan<- *outp
 
 	var input announceUsersRequest
 	if err := json.Unmarshal(ctx.Request.Body(), &input); err != nil {
-		log.WithField("bad request", ctx.Request.Body()).Error()
+		log.WithField("bad request", err.Error()).Error("users rest api")
 		ctx.SetStatusCode(fasthttp.StatusBadRequest)
 		return
 	}

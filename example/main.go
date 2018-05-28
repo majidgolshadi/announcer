@@ -55,9 +55,10 @@ type Log struct {
 }
 
 type Ejabberd struct {
-	ClusterNodes string `toml:"cluster_nodes"`
-	RateLimit    int    `toml:"rate_limit"`
-	SendRetry    int    `toml:"send_retry"`
+	ClusterNodes    string `toml:"cluster_nodes"`
+	RateLimit       int    `toml:"rate_limit"`
+	SendRetry       int    `toml:"send_retry"`
+	EachNodeConnNum int    `toml:"each_node_conn_num"`
 }
 
 type Client struct {
@@ -144,8 +145,10 @@ func main() {
 	///////////////////////////////////////////////////////////
 	var cluster *output.Cluster
 	if cnf.Component.Secret != "" {
-		cluster, err = output.NewComponentCluster(strings.Split(cnf.Ejabberd.ClusterNodes, ","),
+		cluster, err = output.NewComponentCluster(
+			strings.Split(cnf.Ejabberd.ClusterNodes, ","),
 			cnf.Ejabberd.SendRetry,
+			cnf.Ejabberd.EachNodeConnNum,
 			&output.EjabberdComponentOpt{
 				Name:         cnf.Component.Name,
 				Secret:       cnf.Component.Secret,
@@ -157,8 +160,10 @@ func main() {
 		///////////////////////////////////////////////////////////
 		// Ejabberd Client
 		///////////////////////////////////////////////////////////
-		cluster, err = output.NewClientCluster(strings.Split(cnf.Ejabberd.ClusterNodes, ","),
+		cluster, err = output.NewClientCluster(
+			strings.Split(cnf.Ejabberd.ClusterNodes, ","),
 			cnf.Ejabberd.SendRetry,
+			cnf.Ejabberd.EachNodeConnNum,
 			&output.EjabberdClientOpt{
 				Username:       cnf.Client.Username,
 				Password:       cnf.Client.Password,
@@ -172,7 +177,7 @@ func main() {
 		log.WithField("error", err.Error()).Fatal("cluster connecting error")
 	}
 
-	go cluster.ListenAndSend(time.Duration(cnf.Ejabberd.RateLimit), inChat, inKafka)
+	go cluster.ListenAndSend(cnf.Ejabberd.RateLimit, inChat, inKafka)
 	defer cluster.Close()
 
 	///////////////////////////////////////////////////////////
@@ -181,7 +186,7 @@ func main() {
 	kafkaOpt := &output.KafkaProducerOpt{
 		Brokers:        strings.Split(cnf.KafkaProducer.Brokers, ","),
 		Topics:         strings.Split(cnf.KafkaProducer.Topics, ","),
-		FlushFrequency: time.Duration(cnf.KafkaProducer.FlushFrequency) * time.Second,
+		FlushFrequency: time.Duration(cnf.KafkaProducer.FlushFrequency),
 		MaxRetry:       cnf.KafkaProducer.MaxRetry,
 	}
 

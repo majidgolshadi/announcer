@@ -33,6 +33,12 @@ func (opt *KafkaProducerOpt) init() error {
 		opt.MaxRetry = 5
 	}
 
+	if opt.FlushFrequency == 0 {
+		opt.FlushFrequency = 5
+	}
+
+	opt.FlushFrequency = opt.FlushFrequency * time.Second
+
 	return nil
 }
 

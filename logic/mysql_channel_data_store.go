@@ -121,7 +121,7 @@ func (ms *mysql) GetChannelMembers(channelID string) (username <-chan string, er
 	go func() {
 		lastSeenMemberId := 0
 
-		for rowCount := ms.opt.PageLength; rowCount >= ms.opt.PageLength ; {
+		for rowCount := ms.opt.PageLength; rowCount >= ms.opt.PageLength; {
 			rows, err := ms.conn.Query(fmt.Sprintf(UsersChannelUsernameQuery, id, lastSeenMemberId, ms.opt.PageLength))
 
 			if err != nil {
@@ -139,7 +139,7 @@ func (ms *mysql) GetChannelMembers(channelID string) (username <-chan string, er
 	return usernameChan, nil
 }
 
-func scanRows(rows *sql.Rows, usernameChan <-chan string) (lastMemberId int, count int) {
+func scanRows(rows *sql.Rows, usernameChan chan string) (lastMemberId int, count int) {
 	username := ""
 	for rows.Next() {
 

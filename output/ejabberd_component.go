@@ -105,7 +105,7 @@ func (ec *ejabberdComponent) Send(msg string) error {
 	if _, err := ec.conn.Write([]byte(msg)); err != nil {
 		log.WithField("error", err.Error()).Error("component send error")
 		ec.Close()
-		ec.Connect()
+		go ec.Connect()
 
 		return err
 	}

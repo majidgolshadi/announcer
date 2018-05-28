@@ -48,6 +48,7 @@ max_retries=2           #optional (default: 0)
 cluster_nodes="127.0.0.1:8889"
 rate_limit=10           #Msg/sec
 send_retry=6
+each_node_conn_num=1
 
 #[client]
 #username="admin"
