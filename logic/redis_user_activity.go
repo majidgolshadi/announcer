@@ -97,6 +97,11 @@ func (r *redis) IsHeOnline(username string) bool {
 	return result != ""
 }
 
+func (r *redis) WhichOneIsOnline(usernames []string) []interface{} {
+	result, _ := r.conn.MGet(usernames...).Result()
+	return result
+}
+
 func (r *redis) Close() {
 	log.Warn("redis close connection to ", r.opt.Address)
 	if r.conn != nil {

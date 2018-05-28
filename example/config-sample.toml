@@ -32,6 +32,7 @@ set_prefix="192.168."
 check_interval=100
 read_timeout=2 #optional miliseconde
 max_retries=2 #optional
+gmet_buffer=100
 
 [ejabberd]
 cluster_nodes="127.0.0.1:8889"

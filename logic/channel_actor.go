@@ -14,6 +14,8 @@ type ChannelAct struct {
 type ChannelActor struct {
 	UserActivity     UserActivity
 	ChannelDataStore ChannelDataStore
+	askBuffer        int
+	buffer           []string
 
 	monitChannelUserNum       int
 	monitChannelOnlineUserNum int
@@ -21,7 +23,8 @@ type ChannelActor struct {
 
 const SoroushChannelId = "officialsoroushchannel"
 
-func (ca *ChannelActor) Listen(chanAct <-chan *ChannelAct, msgChan chan<- *output.Message) error {
+func (ca *ChannelActor) Listen(askBuffer int, chanAct <-chan *ChannelAct, msgChan chan<- *output.Message) error {
+	ca.askBuffer = askBuffer
 	var start time.Time
 
 	for rec := range chanAct {
@@ -54,6 +57,7 @@ func (ca *ChannelActor) sentToOnlineUser(channelID string, template string, msgC
 		}
 
 		for username := range userChan {
+			ca.monitChannelUserNum++
 			msgChan <- &output.Message{
 				Template: template,
 				Username: username,
@@ -71,19 +75,38 @@ func (ca *ChannelActor) sentToOnlineUser(channelID string, template string, msgC
 	}
 
 	for username := range userChan {
+		ca.buffer = append(ca.buffer, username)
+
+		if len(ca.buffer) >= ca.askBuffer {
+			ca.bulkAskFromUserActivity(template, msgChan)
+		}
+
 		ca.monitChannelUserNum++
-		// Is he/she online
-		if ca.UserActivity.IsHeOnline(username) {
+	}
+
+	ca.bulkAskFromUserActivity(template, msgChan)
+
+	return nil
+}
+
+func (ca *ChannelActor) bulkAskFromUserActivity(template string, msgChan chan<- *output.Message) {
+	userStatus := ca.UserActivity.WhichOneIsOnline(ca.buffer)
+
+	for index, status := range userStatus {
+
+		if status != nil {
 			ca.monitChannelOnlineUserNum++
+
 			msgChan <- &output.Message{
 				Template: template,
-				Username: username,
+				Username: ca.buffer[index],
 				Loggable: false,
 			}
 		}
 	}
 
-	return nil
+	// reset users array
+	ca.buffer = nil
 }
 
 func (ca *ChannelActor) Close() {

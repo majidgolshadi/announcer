@@ -120,9 +120,12 @@ func (ms *mysql) GetChannelMembers(channelID string) (username <-chan string, er
 
 	go func() {
 		lastSeenMemberId := 0
+		var monitMysqlTotalTime float64
 
 		for rowCount := ms.opt.PageLength; rowCount >= ms.opt.PageLength; {
+			start := time.Now()
 			rows, err := ms.conn.Query(fmt.Sprintf(UsersChannelUsernameQuery, id, lastSeenMemberId, ms.opt.PageLength))
+			monitMysqlTotalTime = monitMysqlTotalTime + time.Now().Sub(start).Seconds()
 
 			if err != nil {
 				log.Error("mysql query execution error: ", err.Error())
@@ -134,6 +137,10 @@ func (ms *mysql) GetChannelMembers(channelID string) (username <-chan string, er
 		}
 
 		close(usernameChan)
+		log.WithFields(log.Fields{
+			"channel_id":   channelID,
+			"process_time": monitMysqlTotalTime,
+		}).Info("mysql query")
 	}()
 
 	return usernameChan, nil

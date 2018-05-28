@@ -83,6 +83,7 @@ type Redis struct {
 	SetPrefix    string `toml:"set_prefix"`
 	ReadTimeout  int    `toml:"read_timeout"`
 	MaxRetries   int    `toml:"max_retries"`
+	MGetBuffer   int    `toml:"mget_buffer"`
 }
 
 type Mysql struct {
@@ -252,7 +253,7 @@ func main() {
 
 		logicProcesses = append(logicProcesses, channelActor)
 
-		go channelActor.Listen(inputChannel, inChat)
+		go channelActor.Listen(cnf.Redis.MGetBuffer, inputChannel, inChat)
 	}
 
 	defer func() {

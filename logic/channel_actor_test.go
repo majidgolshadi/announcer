@@ -1,7 +1,9 @@
 package logic
 
 import (
+	"github.com/majidgolshadi/client-announcer/output"
 	"testing"
+	"time"
 )
 
 func TestGetAllOnlineUsers(t *testing.T) {
@@ -28,7 +30,7 @@ func TestSentToSoroushChannelOnlineUser(t *testing.T) {
 		ChannelDataStore: NewMysqlMock(),
 	}
 
-	out := make(chan string)
+	out := make(chan *output.Message)
 	count := 0
 	go func() {
 		for range out {
@@ -55,7 +57,7 @@ func TestSentToChannelWithNoOnlineUser(t *testing.T) {
 		ChannelDataStore: NewMysqlMock(),
 	}
 
-	out := make(chan string)
+	out := make(chan *output.Message)
 	count := 0
 	go func() {
 		for range out {
@@ -82,7 +84,7 @@ func TestSentToChannelWithOnlineUser(t *testing.T) {
 		ChannelDataStore: NewMysqlMock(),
 	}
 
-	out := make(chan string)
+	out := make(chan *output.Message)
 	msgTemplate := "<template to=%s></template>"
 	count := 0
 	go func() {

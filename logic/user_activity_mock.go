@@ -45,6 +45,11 @@ func (r *redisMock) IsHeOnline(username string) bool {
 	return false
 }
 
+func (r *redisMock) WhichOneIsOnline(usernames []string) []interface{} {
+	result := make([]interface{}, len(usernames))
+	return result
+}
+
 func (r *redisMock) Close() {
 	return
 }
