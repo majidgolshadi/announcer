@@ -21,8 +21,6 @@ type ChannelActor struct {
 	monitChannelOnlineUserNum int
 }
 
-const SoroushChannelId = "officialsoroushchannel"
-
 func (ca *ChannelActor) Listen(askBuffer int, chanAct <-chan *ChannelAct, msgChan chan<- *output.Message) error {
 	ca.askBuffer = askBuffer
 	var start time.Time
@@ -48,27 +46,6 @@ func (ca *ChannelActor) Listen(askBuffer int, chanAct <-chan *ChannelAct, msgCha
 }
 
 func (ca *ChannelActor) sentToOnlineUser(channelID string, template string, msgChan chan<- *output.Message) error {
-
-	// all users are soroush official channel members
-	if channelID == SoroushChannelId {
-		userChan, err := ca.UserActivity.GetAllOnlineUsers()
-		if err != nil {
-			return err
-		}
-
-		for username := range userChan {
-			ca.monitChannelUserNum++
-			msgChan <- &output.Message{
-				Template: template,
-				Username: username,
-				Loggable: false,
-			}
-		}
-
-		return nil
-	}
-
-	// loop on channel username fetch from mysql
 	userChan, err := ca.ChannelDataStore.GetChannelMembers(channelID)
 	if err != nil {
 		return err

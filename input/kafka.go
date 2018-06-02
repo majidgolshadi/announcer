@@ -137,6 +137,8 @@ func (kc *KafkaConsumer) action(messageChannel <-chan *sarama.ConsumerMessage, i
 				}
 			}()
 		}
+
+		kc.consumerGroup.CommitUpto(message)
 	}
 }
 

@@ -3,8 +3,9 @@ package logic
 import (
 	"github.com/majidgolshadi/client-announcer/output"
 	"testing"
-	"time"
 )
+
+const SoroushChannelId string = "officialsoroushchannel"
 
 func TestGetAllOnlineUsers(t *testing.T) {
 	r := NewUserActivityMock()

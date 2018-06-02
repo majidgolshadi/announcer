@@ -30,7 +30,7 @@ func (r *redisMock) GetAllOnlineUsers() (<-chan string, error) {
 			usersChan <- fmt.Sprintf("user%d", i)
 		}
 		// if channel closed before read from consumer data will be lost
-		time.Sleep(500 * time.Millisecond)
+		time.Sleep(time.Second)
 		close(usersChan)
 	}()
 

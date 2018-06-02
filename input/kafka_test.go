@@ -22,12 +22,12 @@ func TestValidSaramMessageUnmarshal(t *testing.T) {
 	messages := []*sarama.ConsumerMessage{
 		{
 			Value: []byte(`{
-				"channel_id": "testChannel", 
+				"channel_id": "testChannel",
 				"message": "dGVzdE1lc3NhZ2U="}`),
 		},
 		{
 			Value: []byte(`{
-				"usernames": ["user_1", "user_2", "user_3"], 
+				"usernames": ["user_1", "user_2", "user_3"],
 				"message": "dGVzdE1lc3NhZ2U="}`),
 		},
 	}

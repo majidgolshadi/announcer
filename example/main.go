@@ -18,11 +18,11 @@ import (
 type config struct {
 	HttpPort             string `toml:"rest_api_port"`
 	DebugPort            string `toml:"debug_port"`
-	LogicProcessNum      int    `toml:"logic_process_number"`
 	InputBuffer          int    `toml:"input_buffer"`
 	OutputBuffer         int    `toml:"output_buffer"`
-	BufferReportDuration int    `toml:"buffer_report_duration"`
+	LogicProcessNum      int    `toml:"logic_process_number"`
 
+	Monitoring    Monitoring
 	Log           Log
 	Mysql         Mysql
 	Redis         Redis
@@ -31,6 +31,16 @@ type config struct {
 	Component     Component
 	KafkaConsumer KafkaConsumer `toml:"kafka-consumer"`
 	KafkaProducer KafkaProducer `toml:"kafka-producer"`
+}
+
+type Monitoring struct {
+	BufferReportDuration int    `toml:"buffer_report_duration"`
+}
+
+type Log struct {
+	Format   string `toml:"format"`
+	LogLevel string `toml:"log_level"`
+	LogPoint string `toml:"log_point"`
 }
 
 type KafkaConsumer struct {
@@ -46,12 +56,6 @@ type KafkaProducer struct {
 	Topics         string `toml:"topics"`
 	FlushFrequency int    `toml:"flush_frequency"`
 	MaxRetry       int    `toml:"max_retry"`
-}
-
-type Log struct {
-	Format   string `toml:"format"`
-	LogLevel string `toml:"log_level"`
-	LogPoint string `toml:"log_point"`
 }
 
 type Ejabberd struct {
@@ -126,7 +130,7 @@ func main() {
 	///////////////////////////////////////////////////////////
 	go func() {
 		for {
-			time.Sleep(time.Second * time.Duration(cnf.BufferReportDuration))
+			time.Sleep(time.Second * time.Duration(cnf.Monitoring.BufferReportDuration))
 			log.WithFields(log.Fields{
 				"input":    len(inputChannel),
 				"outChat":  len(inChat),
