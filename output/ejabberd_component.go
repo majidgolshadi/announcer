@@ -102,6 +102,11 @@ func generateMsgID(n int) string {
 }
 
 func (ec *ejabberdComponent) Send(msg string) error {
+	if ec.conn == nil {
+		go ec.Connect()
+		return errors.New("component connection does not established")
+	}
+
 	if _, err := ec.conn.Write([]byte(msg)); err != nil {
 		log.WithField("error", err.Error()).Error("component send error")
 		ec.Close()

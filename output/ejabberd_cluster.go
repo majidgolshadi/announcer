@@ -96,7 +96,7 @@ func NewComponentCluster(address []string, retry int, eachNodeConnNumber int, op
 
 // Based on announcer usage it will be drop a message that it can't send, after retry on all connections and pause time
 func (c *Cluster) ListenAndSend(rateLimit int, messages <-chan *Message, kafkaChan chan<- string) {
-	rlimit := rateLimit * c.eachNodeConnNum
+	rlimit := rateLimit * c.eachNodeConnNum * len(c.address)
 	sleepTime := time.Second / time.Duration(rlimit)
 	// For more that 1000000000 sleep time is zero
 	if sleepTime == 0 {
@@ -116,7 +116,7 @@ func (c *Cluster) ListenAndSend(rateLimit int, messages <-chan *Message, kafkaCh
 }
 
 func (c *Cluster) sendWithRetry(msg string) {
-	for i := 1; i < c.retry; i++ {
+	for i := 0; i < c.retry; i++ {
 		for range c.conn {
 			c.onConn = (c.onConn + 1) % len(c.conn)
 			if err := c.conn[c.onConn].Send(msg); err != nil {

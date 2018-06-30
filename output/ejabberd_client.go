@@ -99,6 +99,11 @@ func (ec *ejabberdClient) keepConnectionAlive() {
 }
 
 func (ec *ejabberdClient) Send(msg string) error {
+	if ec.conn == nil {
+		go ec.Connect()
+		return errors.New("client connection does not established")
+	}
+
 	if err := ec.conn.SendCustomMsg(msg); err != nil {
 		log.WithField("error", err.Error()).Error("client send error")
 		ec.Close()
