@@ -66,6 +66,30 @@ ping_interval=110
 
 >To use component connection you must be define component port for ejabberd servers
 
+
+Installation
+------------
+Define it as a systemd service in `/etc/systemd/system/announcer.service` file
+```service
+[Unit]
+Description=Announcer
+After=network.target
+Wants=network.target
+
+[Service]
+WorkingDirectory=/root/announcer
+ExecStart=/root/announcer/announcer
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+```
+
+And then add `check_up.sh` as a cron job to check service recovery for when service goes down
+```bash
+*/5 * * * *	root /root/announcer/check_up.sh  > /var/log/announcer_cron_check.log
+```
+
 Rest APIs
 ---------
 |URI|type|Description|
