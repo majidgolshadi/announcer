@@ -36,13 +36,21 @@ pagination_length=100    #Fetch channel data bulk size
 max_ideal_conn=50       #Optional (default: 10)
 max_open_conn=50        #Optional (default: 10)
 
-[redis]
+#announcer must be connect to one the rest-api or redis interface
+[user-activity-redis]
 cluster_nodes="127.0.0.1:6379"
 password=""
 db=0
 set_prefix="192.168."
 read_timeout=1000       #optional sec (default: 1000 milisecond)
 max_retries=2           #optional (default: 0)
+
+[user-activity-rest-api]
+address="127.0.0.1:8888"
+request_timeout=12      #optional milisecond (default: 500 milisecond)
+idle_conn_timeout=1     #optional sec (default: 90 sec)
+max_idle_conn=1         #optional (default: 100)
+max_retry=1             #optional (default: 3)
 
 [ejabberd]
 cluster_nodes="127.0.0.1:8889"
@@ -85,9 +93,13 @@ Restart=on-failure
 WantedBy=multi-user.target
 ```
 
-And then add `check_up.sh` as a cron job to check service recovery for when service goes down
+And then add `check_up.sh` as a cron job to check service recovery if ejabberd service goes down for a long time
 ```bash
 */5 * * * *	root /root/announcer/check_up.sh  > /var/log/announcer_cron_check.log
+```
+And use `get_conn_len.sh` script in order to monitor service connection with zabbix
+```
+UserParameter=conn.len[*],cat /etc/zabbix/connections | grep $1 | awk '{print $$2}'
 ```
 
 Rest APIs
@@ -142,7 +154,10 @@ message structures are like rest api
 
 connection handling
 -------------------
-**Redis**
+**User activity Rest API**
+Http connections are reusable, if they are busy new connection will be create
+
+**User activity Redis**
 Connection will be check every "check_interval" second.
 If connection lost it will discard fetch data from that till connection establish again
 

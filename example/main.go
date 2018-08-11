@@ -16,25 +16,26 @@ import (
 )
 
 type config struct {
-	HttpPort             string `toml:"rest_api_port"`
-	DebugPort            string `toml:"debug_port"`
-	InputBuffer          int    `toml:"input_buffer"`
-	OutputBuffer         int    `toml:"output_buffer"`
-	LogicProcessNum      int    `toml:"logic_process_number"`
+	HttpPort        string `toml:"rest_api_port"`
+	DebugPort       string `toml:"debug_port"`
+	InputBuffer     int    `toml:"input_buffer"`
+	OutputBuffer    int    `toml:"output_buffer"`
+	LogicProcessNum int    `toml:"logic_process_number"`
 
-	Monitoring    Monitoring
-	Log           Log
-	Mysql         Mysql
-	Redis         Redis
-	Ejabberd      Ejabberd
-	Client        Client
-	Component     Component
-	KafkaConsumer KafkaConsumer `toml:"kafka-consumer"`
-	KafkaProducer KafkaProducer `toml:"kafka-producer"`
+	Monitoring          Monitoring
+	Log                 Log
+	Mysql               Mysql
+	UserActivityRedis   Redis               `toml:"user-activity-redis"`
+	UserActivityRestApi UserActivityRestApi `toml:"user-activity-rest-api"`
+	Ejabberd            Ejabberd
+	Client              Client
+	Component           Component
+	KafkaConsumer       KafkaConsumer `toml:"kafka-consumer"`
+	KafkaProducer       KafkaProducer `toml:"kafka-producer"`
 }
 
 type Monitoring struct {
-	BufferReportDuration int    `toml:"buffer_report_duration"`
+	BufferReportDuration int `toml:"buffer_report_duration"`
 }
 
 type Log struct {
@@ -88,6 +89,14 @@ type Redis struct {
 	ReadTimeout  int    `toml:"read_timeout"`
 	MaxRetries   int    `toml:"max_retries"`
 	MGetBuffer   int    `toml:"mget_buffer"`
+}
+
+type UserActivityRestApi struct {
+	Address           string `toml:"address"`
+	RequestTimeout    int    `toml:"request_timeout"`
+	IdleConnTimeout   int    `toml:"idle_conn_timeout"`
+	MaxIdleConnection int    `toml:"max_idle_conn"`
+	MaxRetries        int    `toml:"max_retry"`
 }
 
 type Mysql struct {
@@ -212,17 +221,32 @@ func main() {
 	///////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////
 
-	// Redis configuration
-	redis, err := logic.NewRedisUserDataStore(&logic.RedisOpt{
-		Address:     cnf.Redis.ClusterNodes,
-		Password:    cnf.Redis.Password,
-		Database:    cnf.Redis.DB,
-		SetPrefix:   cnf.Redis.SetPrefix,
-		MaxRetries:  cnf.Redis.MaxRetries,
-		ReadTimeout: time.Duration(cnf.Redis.ReadTimeout),
-	})
-	if err != nil {
-		log.WithField("error", err.Error()).Fatal("redis connection failed")
+	var (
+		uai    logic.UserActivity
+		uaiErr error
+	)
+	if cnf.UserActivityRedis.ClusterNodes != "" {
+		// User activity Redis configuration
+		uai, uaiErr = logic.NewRedisUserDataStore(&logic.RedisOpt{
+			Address:     cnf.UserActivityRedis.ClusterNodes,
+			Password:    cnf.UserActivityRedis.Password,
+			Database:    cnf.UserActivityRedis.DB,
+			SetPrefix:   cnf.UserActivityRedis.SetPrefix,
+			MaxRetries:  cnf.UserActivityRedis.MaxRetries,
+			ReadTimeout: time.Duration(cnf.UserActivityRedis.ReadTimeout),
+		})
+	} else {
+		// User activity REST API configuration
+		uai, uaiErr = logic.NewUserActivityRestApi(&logic.UserActivityRestApiOpt{
+			RestApiBaseUrl:    cnf.UserActivityRestApi.Address,
+			MaxRetries:        cnf.UserActivityRestApi.MaxRetries,
+			RequestTimeout:    time.Duration(cnf.UserActivityRestApi.RequestTimeout),
+			IdleConnTimeout:   time.Duration(cnf.UserActivityRestApi.IdleConnTimeout),
+			MaxIdleConnection: cnf.UserActivityRestApi.MaxIdleConnection,
+		})
+	}
+	if uaiErr != nil {
+		log.WithField("error", uaiErr.Error()).Fatal("user activity interface connection failed")
 	}
 
 	// Mysql configuration
@@ -252,12 +276,12 @@ func main() {
 	for i := 0; i < cnf.LogicProcessNum; i++ {
 		channelActor := &logic.ChannelActor{
 			ChannelDataStore: mysql,
-			UserActivity:     redis,
+			UserActivity:     uai,
 		}
 
 		logicProcesses = append(logicProcesses, channelActor)
 
-		go channelActor.Listen(cnf.Redis.MGetBuffer, inputChannel, inChat)
+		go channelActor.Listen(cnf.UserActivityRedis.MGetBuffer, inputChannel, inChat)
 	}
 
 	defer func() {

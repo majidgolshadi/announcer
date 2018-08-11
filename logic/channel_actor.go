@@ -67,18 +67,15 @@ func (ca *ChannelActor) sentToOnlineUser(channelID string, template string, msgC
 }
 
 func (ca *ChannelActor) bulkAskFromUserActivity(template string, msgChan chan<- *output.Message) {
-	userStatus := ca.UserActivity.WhichOneIsOnline(ca.buffer)
+	usernames := ca.UserActivity.FilterOnlineUsers(ca.buffer)
 
-	for index, status := range userStatus {
+	for _, username := range usernames {
+		ca.monitChannelOnlineUserNum++
 
-		if status != nil {
-			ca.monitChannelOnlineUserNum++
-
-			msgChan <- &output.Message{
-				Template: template,
-				Username: ca.buffer[index],
-				Loggable: false,
-			}
+		msgChan <- &output.Message{
+			Template: template,
+			Username: username,
+			Loggable: false,
 		}
 	}
 

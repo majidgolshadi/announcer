@@ -24,7 +24,7 @@ pagination_length=100
 max_ideal_conn=50
 max_open_conn=50
 
-[redis]
+[user-activity-redis]
 cluster_nodes="127.0.0.1:6379"
 password=""
 db=0
@@ -33,6 +33,13 @@ check_interval=100
 read_timeout=2 #optional miliseconde
 max_retries=2 #optional
 gmet_buffer=100
+
+[user-activity-rest-api]
+address="127.0.0.1:8888"
+request_timeout=12
+idle_conn_timeout=1
+max_idle_conn=1
+max_retry=1
 
 [ejabberd]
 cluster_nodes="127.0.0.1:8889"

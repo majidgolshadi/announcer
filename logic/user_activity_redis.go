@@ -71,35 +71,22 @@ func (r *redis) connect() (err error) {
 	return err
 }
 
-func (r *redis) GetAllOnlineUsers() (<-chan string, error) {
-	usersChan := make(chan string)
-	ips, err := r.conn.Keys(r.opt.SetPrefix).Result()
-	if err != nil {
-		return nil, err
-	}
-
-	go func() {
-		for _, ip := range ips {
-			members, _ := r.conn.SMembers(ip).Result()
-			for _, member := range members {
-				usersChan <- member
-			}
-		}
-
-		close(usersChan)
-	}()
-
-	return usersChan, nil
-}
-
 func (r *redis) IsHeOnline(username string) bool {
 	result, _ := r.conn.Get(username).Result()
 	return result != ""
 }
 
-func (r *redis) WhichOneIsOnline(usernames []string) []interface{} {
+func (r *redis) FilterOnlineUsers(usernames []string) []string {
 	result, _ := r.conn.MGet(usernames...).Result()
-	return result
+	var onlineUsers []string
+
+	for index, status := range result {
+		if status != nil {
+			onlineUsers = append(onlineUsers, usernames[index])
+		}
+	}
+
+	return onlineUsers
 }
 
 func (r *redis) Close() {
