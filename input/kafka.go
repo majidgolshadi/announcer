@@ -94,10 +94,11 @@ func NewKafkaConsumer(option *KafkaConsumerOpt) (*KafkaConsumer, error) {
 }
 
 type kafkaMsg struct {
-	ChannelID string   `json:"channel_id"`
-	Usernames []string `json:"usernames"`
-	Message   string   `json:"message"`
-	template  []byte
+	ChannelID   string   `json:"channel_id"`
+	Usernames   []string `json:"usernames"`
+	Message     string   `json:"message"`
+	Persistable bool     `json:"persistable"`
+	template    []byte
 }
 
 func (kc *KafkaConsumer) Listen(inputChannel chan<- *logic.ChannelAct, inputChat chan<- *output.Message) (err error) {
@@ -113,7 +114,9 @@ func (kc *KafkaConsumer) Listen(inputChannel chan<- *logic.ChannelAct, inputChat
 
 func (kc *KafkaConsumer) action(messageChannel <-chan *sarama.ConsumerMessage, inputChannel chan<- *logic.ChannelAct, inputChat chan<- *output.Message) {
 	for message := range messageChannel {
-		req := &kafkaMsg{}
+		req := &kafkaMsg{
+			Persistable: true,
+		}
 		if err := saramMessageUnmarshal(message, req); err != nil {
 			log.WithField("error", err.Error()).
 				Error("kafka consumer request")
@@ -130,9 +133,9 @@ func (kc *KafkaConsumer) action(messageChannel <-chan *sarama.ConsumerMessage, i
 			go func() {
 				for _, username := range req.Usernames {
 					inputChat <- &output.Message{
-						Template: string(req.template),
-						Username: username,
-						Loggable: true,
+						Template:    string(req.template),
+						Username:    username,
+						Persistable: req.Persistable,
 					}
 				}
 			}()

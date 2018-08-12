@@ -16,9 +16,9 @@ type Cluster struct {
 }
 
 type Message struct {
-	Template string
-	Username string
-	Loggable bool
+	Template    string
+	Username    string
+	Persistable bool
 }
 
 func (msg *Message) toString(domain string) string {
@@ -107,7 +107,7 @@ func (c *Cluster) ListenAndSend(rateLimit int, messages <-chan *Message, kafkaCh
 
 	for msg := range messages {
 		<-ticker.C
-		if msg.Loggable {
+		if msg.Persistable {
 			kafkaChan <- msg.toString(c.domain)
 		}
 

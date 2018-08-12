@@ -79,3 +79,58 @@ func TestInValidSaramMessageUnmarshal(t *testing.T) {
 		}
 	}
 }
+
+func TestDefaultPersistableMessageTrue(t *testing.T) {
+	messages := []*sarama.ConsumerMessage{
+		{
+			Value: []byte(`{
+				"usernames": ["user_1", "user_2", "user_3"],
+				"message": "dGVzdE1lc3NhZ2U="}`),
+		},
+		{
+			Value: []byte(`{
+				"usernames": ["user_1", "user_2", "user_3"],
+				"message": "dGVzdE1lc3NhZ2U=",
+				"persistable": true}`),
+		},
+	}
+
+	for i := 0; i < len(messages); i++ {
+		req := &kafkaMsg{
+			Persistable: true,
+		}
+		if err := saramMessageUnmarshal(messages[i], req); err != nil {
+			t.Log(i, err.Error())
+			t.Fail()
+		}
+
+		if req.Persistable != true {
+			t.Fail()
+		}
+	}
+}
+
+func TestPersistableMessageFalse(t *testing.T) {
+	messages := []*sarama.ConsumerMessage{
+		{
+			Value: []byte(`{
+				"usernames": ["user_1", "user_2", "user_3"],
+				"message": "dGVzdE1lc3NhZ2U=",
+				"persistable": false}`),
+		},
+	}
+
+	for i := 0; i < len(messages); i++ {
+		req := &kafkaMsg{
+			Persistable: true,
+		}
+		if err := saramMessageUnmarshal(messages[i], req); err != nil {
+			t.Log(i, err.Error())
+			t.Fail()
+		}
+
+		if req.Persistable != false {
+			t.Fail()
+		}
+	}
+}
