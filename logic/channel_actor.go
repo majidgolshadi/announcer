@@ -73,9 +73,9 @@ func (ca *ChannelActor) bulkAskFromUserActivity(template string, msgChan chan<- 
 		ca.monitChannelOnlineUserNum++
 
 		msgChan <- &output.Message{
-			Template:    template,
-			Username:    username,
-			Persist: false,
+			Template: template,
+			Username: username,
+			Persist:  false,
 		}
 	}
 

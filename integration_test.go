@@ -2,9 +2,9 @@ package client_announcer
 
 import (
 	"flag"
-	"testing"
 	"os"
 	"os/exec"
+	"testing"
 )
 
 var integration = flag.Bool("integration", false, "run integration tests")
@@ -30,4 +30,3 @@ func teardownServices() {
 	exec.Command("docker-compose stop")
 	exec.Command("docker-compose rm -f")
 }
-

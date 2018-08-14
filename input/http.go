@@ -79,9 +79,9 @@ func v1PostAnnounceChannelHandler(ctx *fasthttp.RequestCtx, inputChannel chan<- 
 }
 
 type announceUsersRequest struct {
-	Message     string   `json:"message"`
-	Usernames   []string `json:"usernames"`
-	Persist bool     `json:"persist"`
+	Message   string   `json:"message"`
+	Usernames []string `json:"usernames"`
+	Persist   bool     `json:"persist"`
 }
 
 func v1PostAnnounceUsersHandler(ctx *fasthttp.RequestCtx, inputChat chan<- *output.Message) {
@@ -113,9 +113,9 @@ func v1PostAnnounceUsersHandler(ctx *fasthttp.RequestCtx, inputChat chan<- *outp
 
 	for _, username := range input.Usernames {
 		inputChat <- &output.Message{
-			Template:    string(msgTmp),
-			Username:    username,
-			Persist: input.Persist,
+			Template: string(msgTmp),
+			Username: username,
+			Persist:  input.Persist,
 		}
 	}
 

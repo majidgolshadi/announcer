@@ -16,9 +16,9 @@ type Cluster struct {
 }
 
 type Message struct {
-	Template    string
-	Username    string
-	Persist bool
+	Template string
+	Username string
+	Persist  bool
 }
 
 func (msg *Message) toString(domain string) string {

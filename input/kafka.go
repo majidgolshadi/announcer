@@ -94,11 +94,11 @@ func NewKafkaConsumer(option *KafkaConsumerOpt) (*KafkaConsumer, error) {
 }
 
 type kafkaMsg struct {
-	ChannelID   string   `json:"channel_id"`
-	Usernames   []string `json:"usernames"`
-	Message     string   `json:"message"`
-	Persist bool     `json:"persist"`
-	template    []byte
+	ChannelID string   `json:"channel_id"`
+	Usernames []string `json:"usernames"`
+	Message   string   `json:"message"`
+	Persist   bool     `json:"persist"`
+	template  []byte
 }
 
 func (kc *KafkaConsumer) Listen(inputChannel chan<- *logic.ChannelAct, inputChat chan<- *output.Message) (err error) {
@@ -130,15 +130,15 @@ func (kc *KafkaConsumer) action(messageChannel <-chan *sarama.ConsumerMessage, i
 				ChannelID:       req.ChannelID,
 			}
 		} else {
-			go func() {
+			go func(kafkaMsg) {
 				for _, username := range req.Usernames {
 					inputChat <- &output.Message{
-						Template:    string(req.template),
-						Username:    username,
-						Persist: req.Persist,
+						Template: string(req.template),
+						Username: username,
+						Persist:  req.Persist,
 					}
 				}
-			}()
+			}(*req)
 		}
 
 		kc.consumerGroup.CommitUpto(message)

@@ -1,8 +1,8 @@
 package logic
 
 import (
-	"testing"
 	"fmt"
+	"testing"
 )
 
 func TestIsHeOnline(t *testing.T) {
