@@ -16,6 +16,7 @@ input_buffer=100      #Input channel buffer
 output_buffer=100     #Output channel buffer
 logic_process_number=2      #Increase logic concurrency
 buffer_report_duration=1    #Report buffer fill length every X sec
+user_activity_ask_buffer=1000
 
 [log]
 log_level="debug"     #debug/info/warning/error (default: warning)
@@ -138,7 +139,7 @@ In order to send a message to **all online users** you need to set channel_id **
 {
     "usernames": ["USERNAME_1", ..., "USERNAME_N"],
     "message": "BASE64_ENCODE_MESSAGE",
-    "persistable" true
+    "persist": true
 }
 ```
 Message will be send to specific user without any check that is he online or not

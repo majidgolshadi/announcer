@@ -75,7 +75,7 @@ func (ca *ChannelActor) bulkAskFromUserActivity(template string, msgChan chan<- 
 		msgChan <- &output.Message{
 			Template:    template,
 			Username:    username,
-			Persistable: false,
+			Persist: false,
 		}
 	}
 

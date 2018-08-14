@@ -79,9 +79,9 @@ func v1PostAnnounceChannelHandler(ctx *fasthttp.RequestCtx, inputChannel chan<- 
 }
 
 type announceUsersRequest struct {
-	Message   string   `json:"message"`
-	Usernames []string `json:"usernames"`
-	Persistable bool `json:"persistable"`
+	Message     string   `json:"message"`
+	Usernames   []string `json:"usernames"`
+	Persist bool     `json:"persist"`
 }
 
 func v1PostAnnounceUsersHandler(ctx *fasthttp.RequestCtx, inputChat chan<- *output.Message) {
@@ -91,7 +91,7 @@ func v1PostAnnounceUsersHandler(ctx *fasthttp.RequestCtx, inputChat chan<- *outp
 	}
 
 	input := &announceUsersRequest{
-		Persistable: true,
+		Persist: true,
 	}
 	if err := json.Unmarshal(ctx.Request.Body(), &input); err != nil {
 		log.WithField("bad request", err.Error()).Error("users rest api")
@@ -115,7 +115,7 @@ func v1PostAnnounceUsersHandler(ctx *fasthttp.RequestCtx, inputChat chan<- *outp
 		inputChat <- &output.Message{
 			Template:    string(msgTmp),
 			Username:    username,
-			Persistable: input.Persistable,
+			Persist: input.Persist,
 		}
 	}
 

@@ -9,3 +9,4 @@ echo "user-activity-api "$(netstat -nap | grep :8888 | wc -l) >> $FILE
 echo "mysql "$(netstat -nap | grep :33061 | wc -l) >> $FILE
 echo "zookeeper "$(netstat -nap | grep :2181 | wc -l) >> $FILE
 echo "kafka "$(netstat -nap | grep :9092 | wc -l) >> $FILE
+echo "user-activity-rest-api "$(netstat -nap | grep :8888 | wc -l) >> $FILE

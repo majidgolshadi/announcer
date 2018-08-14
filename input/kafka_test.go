@@ -91,20 +91,20 @@ func TestDefaultPersistableMessageTrue(t *testing.T) {
 			Value: []byte(`{
 				"usernames": ["user_1", "user_2", "user_3"],
 				"message": "dGVzdE1lc3NhZ2U=",
-				"persistable": true}`),
+				"persist": true}`),
 		},
 	}
 
 	for i := 0; i < len(messages); i++ {
 		req := &kafkaMsg{
-			Persistable: true,
+			Persist: true,
 		}
 		if err := saramMessageUnmarshal(messages[i], req); err != nil {
 			t.Log(i, err.Error())
 			t.Fail()
 		}
 
-		if req.Persistable != true {
+		if req.Persist != true {
 			t.Fail()
 		}
 	}
@@ -116,20 +116,20 @@ func TestPersistableMessageFalse(t *testing.T) {
 			Value: []byte(`{
 				"usernames": ["user_1", "user_2", "user_3"],
 				"message": "dGVzdE1lc3NhZ2U=",
-				"persistable": false}`),
+				"persist": false}`),
 		},
 	}
 
 	for i := 0; i < len(messages); i++ {
 		req := &kafkaMsg{
-			Persistable: true,
+			Persist: true,
 		}
 		if err := saramMessageUnmarshal(messages[i], req); err != nil {
 			t.Log(i, err.Error())
 			t.Fail()
 		}
 
-		if req.Persistable != false {
+		if req.Persist != false {
 			t.Fail()
 		}
 	}

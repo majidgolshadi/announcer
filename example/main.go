@@ -16,11 +16,12 @@ import (
 )
 
 type config struct {
-	HttpPort        string `toml:"rest_api_port"`
-	DebugPort       string `toml:"debug_port"`
-	InputBuffer     int    `toml:"input_buffer"`
-	OutputBuffer    int    `toml:"output_buffer"`
-	LogicProcessNum int    `toml:"logic_process_number"`
+	HttpPort              string `toml:"rest_api_port"`
+	DebugPort             string `toml:"debug_port"`
+	InputBuffer           int    `toml:"input_buffer"`
+	OutputBuffer          int    `toml:"output_buffer"`
+	LogicProcessNum       int    `toml:"logic_process_number"`
+	UserActivityAskBuffer int    `toml:"user_activity_ask_buffer"`
 
 	Monitoring          Monitoring
 	Log                 Log
@@ -88,7 +89,6 @@ type Redis struct {
 	SetPrefix    string `toml:"set_prefix"`
 	ReadTimeout  int    `toml:"read_timeout"`
 	MaxRetries   int    `toml:"max_retries"`
-	MGetBuffer   int    `toml:"mget_buffer"`
 }
 
 type UserActivityRestApi struct {
@@ -281,7 +281,7 @@ func main() {
 
 		logicProcesses = append(logicProcesses, channelActor)
 
-		go channelActor.Listen(cnf.UserActivityRedis.MGetBuffer, inputChannel, inChat)
+		go channelActor.Listen(cnf.UserActivityAskBuffer, inputChannel, inChat)
 	}
 
 	defer func() {

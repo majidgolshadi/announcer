@@ -26,7 +26,15 @@ func (r *redisMock) IsHeOnline(username string) bool {
 }
 
 func (r *redisMock) FilterOnlineUsers(usernames []string) []string {
-	return []string{"user1_online", "user2_online", "user3_online"}
+	var result []string
+
+	for _, username := range usernames {
+		if r.IsHeOnline(username) {
+			result = append(result, username)
+		}
+	}
+
+	return result
 }
 
 func (r *redisMock) Close() {

@@ -80,7 +80,7 @@ func NewUserActivityRestApi(opt *UserActivityRestApiOpt) (*userActivityRestApi, 
 
 func (r *userActivityRestApi) IsHeOnline(username string) bool {
 	var result *http.Response
-	err := errors.New("not call")
+	err := errors.New("did not call")
 
 	for i := 0; i < r.opt.MaxRetries && err != nil; i++ {
 		result, err = r.conn.Post(r.getOnlineUrl, JsonContentType,
@@ -94,21 +94,33 @@ func (r *userActivityRestApi) IsHeOnline(username string) bool {
 }
 
 func (r *userActivityRestApi) FilterOnlineUsers(usernames []string) []string {
-	var result *http.Response
+	var httpResponse *http.Response
 	err := errors.New("not call")
 
 	for i := 0; i < r.opt.MaxRetries && err != nil; i++ {
-		result, err = r.conn.Post(r.getOnlineUrl, JsonContentType,
+		httpResponse, err = r.conn.Post(r.getOnlineUrl, JsonContentType,
 			strings.NewReader(fmt.Sprintf("[\"%s\"]", strings.Join(usernames, "\",\""))))
 	}
 
-	defer result.Body.Close() // to make connection reusable
+	defer httpResponse.Body.Close() // to make connection reusable
 
-	body, _ := ioutil.ReadAll(result.Body)
-	trimmed := strings.Trim(string(body), "]")
-	trimmed = strings.Trim(trimmed, "[")
+	body, _ := ioutil.ReadAll(httpResponse.Body)
+	bodyStr := string(body)
+	log.WithField("users", bodyStr).Debug("user activity rest api")
 
-	return strings.Split(trimmed, ",")
+	// Check TestAttentionSplitStringBehavior
+	replacer := strings.NewReplacer("[", "",
+		`"`, "",
+		"]", "")
+
+	bodyStr = replacer.Replace(bodyStr)
+	result := strings.Split(bodyStr, ",")
+
+	if len(result) == 1 && result[0] == "" {
+		return []string{}
+	}
+
+	return result
 }
 
 func (r *userActivityRestApi) Close() {

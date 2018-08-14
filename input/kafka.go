@@ -97,7 +97,7 @@ type kafkaMsg struct {
 	ChannelID   string   `json:"channel_id"`
 	Usernames   []string `json:"usernames"`
 	Message     string   `json:"message"`
-	Persistable bool     `json:"persistable"`
+	Persist bool     `json:"persist"`
 	template    []byte
 }
 
@@ -115,7 +115,7 @@ func (kc *KafkaConsumer) Listen(inputChannel chan<- *logic.ChannelAct, inputChat
 func (kc *KafkaConsumer) action(messageChannel <-chan *sarama.ConsumerMessage, inputChannel chan<- *logic.ChannelAct, inputChat chan<- *output.Message) {
 	for message := range messageChannel {
 		req := &kafkaMsg{
-			Persistable: true,
+			Persist: true,
 		}
 		if err := saramMessageUnmarshal(message, req); err != nil {
 			log.WithField("error", err.Error()).
@@ -135,7 +135,7 @@ func (kc *KafkaConsumer) action(messageChannel <-chan *sarama.ConsumerMessage, i
 					inputChat <- &output.Message{
 						Template:    string(req.template),
 						Username:    username,
-						Persistable: req.Persistable,
+						Persist: req.Persist,
 					}
 				}
 			}()
