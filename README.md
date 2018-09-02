@@ -119,7 +119,7 @@ Samples
 
 ```json
 {
-  "channel": 22,
+  "channel_id": 22,
   "message": "BASE64_ENCODED_MESSAGE"
 }
 ```
