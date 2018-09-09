@@ -18,8 +18,8 @@ import (
 type config struct {
 	HttpPort              string `toml:"rest_api_port"`
 	DebugPort             string `toml:"debug_port"`
-	InputBuffer           int    `toml:"input_buffer"`
-	OutputBuffer          int    `toml:"output_buffer"`
+	InputQueueLength      int    `toml:"input_queue_length"`
+	OutputQueueLength     int    `toml:"output_queue_length"`
 	LogicProcessNum       int    `toml:"logic_process_number"`
 	UserActivityAskBuffer int    `toml:"user_activity_ask_buffer"`
 
@@ -42,7 +42,7 @@ type Monitoring struct {
 type Log struct {
 	Format   string `toml:"format"`
 	LogLevel string `toml:"log_level"`
-	LogPoint string `toml:"log_point"`
+	LogDst   string `toml:"log_dst"`
 }
 
 type KafkaConsumer struct {
@@ -86,7 +86,6 @@ type Redis struct {
 	ClusterNodes string `toml:"cluster_nodes"`
 	Password     string `toml:"password"`
 	DB           int    `toml:"db"`
-	SetPrefix    string `toml:"set_prefix"`
 	ReadTimeout  int    `toml:"read_timeout"`
 	MaxRetries   int    `toml:"max_retries"`
 }
@@ -125,13 +124,13 @@ func main() {
 		log.Println(http.ListenAndServe(cnf.DebugPort, nil))
 	}()
 
-	inputChannel := make(chan *logic.ChannelAct, cnf.InputBuffer)
+	inputChannel := make(chan *logic.ChannelAct, cnf.InputQueueLength)
 	defer close(inputChannel)
 
-	inChat := make(chan *output.Message, cnf.OutputBuffer)
+	inChat := make(chan *output.Message, cnf.OutputQueueLength)
 	defer close(inChat)
 
-	inKafka := make(chan string, cnf.OutputBuffer)
+	inKafka := make(chan string, cnf.OutputQueueLength)
 	defer close(inKafka)
 
 	///////////////////////////////////////////////////////////
@@ -231,7 +230,6 @@ func main() {
 			Address:     cnf.UserActivityRedis.ClusterNodes,
 			Password:    cnf.UserActivityRedis.Password,
 			Database:    cnf.UserActivityRedis.DB,
-			SetPrefix:   cnf.UserActivityRedis.SetPrefix,
 			MaxRetries:  cnf.UserActivityRedis.MaxRetries,
 			ReadTimeout: time.Duration(cnf.UserActivityRedis.ReadTimeout),
 		})
@@ -348,8 +346,8 @@ func initLogService(logConfig Log) {
 		log.SetFormatter(&log.TextFormatter{})
 	}
 
-	if logConfig.LogPoint != "" {
-		f, err := os.Create(logConfig.LogPoint)
+	if logConfig.LogDst != "" {
+		f, err := os.Create(logConfig.LogDst)
 		if err != nil {
 			log.Fatal("create log file error: ", err.Error())
 		}

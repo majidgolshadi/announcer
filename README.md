@@ -15,14 +15,17 @@ debug_port=":6060"
 input_buffer=100      #Input channel buffer
 output_buffer=100     #Output channel buffer
 logic_process_number=2      #Increase logic concurrency
-buffer_report_duration=1    #Report buffer fill length every X sec
 user_activity_ask_buffer=1000
+
+[monitoring]
+buffer_report_duration=1    #Report buffer fill length every X sec
 
 [log]
 log_level="debug"     #debug/info/warning/error (default: warning)
 format="text"         #json/text (defualt: text)
+log_dst="/path/to/dest/file.log" #Optional
 
-[kafka]
+[kafka-consumer]
 zookeeper="127.0.0.1:2181/"
 topics="test-topic"       #Multi topic can seperate with ','
 group_name="announcer"
@@ -42,7 +45,6 @@ max_open_conn=50        #Optional (default: 10)
 cluster_nodes="127.0.0.1:6379"
 password=""
 db=0
-set_prefix="192.168."
 read_timeout=1000       #optional sec (default: 1000 milisecond)
 max_retries=2           #optional (default: 0)
 
@@ -52,6 +54,12 @@ request_timeout=12      #optional milisecond (default: 500 milisecond)
 idle_conn_timeout=1     #optional sec (default: 90 sec)
 max_idle_conn=1         #optional (default: 100)
 max_retry=1             #optional (default: 3)
+
+[kafka-producer]
+brokers="192.168.2.1:9092,192.168.2.2:9092,192.168.2.3:9092" #optional (default: 127.0.0.1:9092)
+topics="test-topic-name"
+flush_frequency=3      #optional sec (default: 5 sec)
+MaxRetry=3             #optional (default: 5)
 
 [ejabberd]
 cluster_nodes="127.0.0.1:8889"

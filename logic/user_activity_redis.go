@@ -18,16 +18,11 @@ type RedisOpt struct {
 	Address     string
 	Password    string
 	Database    int
-	SetPrefix   string
 	ReadTimeout time.Duration
 	MaxRetries  int
 }
 
 func (opt *RedisOpt) init() error {
-	if opt.SetPrefix == "" {
-		return errors.New("set prefix is empty")
-	}
-
 	if opt.Address == "" {
 		opt.Address = "127.0.0.1:6379"
 	}
