@@ -6,6 +6,7 @@ import (
 	"github.com/sheenobu/go-xco"
 	log "github.com/sirupsen/logrus"
 	"math/rand"
+	"sync"
 	"time"
 )
 
@@ -14,6 +15,7 @@ type ejabberdComponent struct {
 	xcoOpt          xco.Options
 	conn            *xco.Component
 	checkConnTicker *time.Ticker
+	connMutex       *sync.Mutex
 }
 
 type EjabberdComponentOpt struct {
@@ -59,7 +61,7 @@ func NewEjabberdComponent(opt *EjabberdComponentOpt) (*ejabberdComponent, error)
 
 	return &ejabberdComponent{
 		opt:             opt,
-		checkConnTicker: time.NewTicker(opt.PingInterval),
+		connMutex:       &sync.Mutex{},
 		xcoOpt: xco.Options{
 			Name:         opt.Name,
 			Address:      opt.Host,
@@ -69,6 +71,13 @@ func NewEjabberdComponent(opt *EjabberdComponentOpt) (*ejabberdComponent, error)
 }
 
 func (ec *ejabberdComponent) Connect() (err error) {
+	ec.connMutex.Lock()
+
+	if ec.conn != nil {
+		err = errors.New("connection exists")
+		log.Error("ejabberd component connection error: ", err.Error())
+	}
+
 	if ec.conn, err = xco.NewComponent(ec.xcoOpt); err != nil {
 		return err
 	}
@@ -78,6 +87,8 @@ func (ec *ejabberdComponent) Connect() (err error) {
 		if err := ec.conn.Run(); err != nil {
 			log.Error("ejabberd component connection error: ", err.Error())
 		}
+
+		ec.connMutex.Unlock()
 	}()
 
 	go ec.keepConnectionAlive()
@@ -85,6 +96,8 @@ func (ec *ejabberdComponent) Connect() (err error) {
 }
 
 func (ec *ejabberdComponent) keepConnectionAlive() {
+	ec.checkConnTicker = time.NewTicker(ec.opt.PingInterval)
+
 	for range ec.checkConnTicker.C {
 		ec.conn.Send(fmt.Sprintf(PingIq, ec.opt.Domain, generateMsgID(5)))
 	}

@@ -1,7 +1,6 @@
 package logic
 
 import (
-	"errors"
 	redisCli "github.com/go-redis/redis"
 	log "github.com/sirupsen/logrus"
 	"time"
