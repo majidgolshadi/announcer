@@ -15,7 +15,7 @@ import (
 )
 
 type KafkaConsumer struct {
-	consumerGroup *consumergroup.ConsumerGroup
+	consumerGroups []*consumergroup.ConsumerGroup
 	config        *consumergroup.Config
 	opt           *KafkaConsumerOpt
 
@@ -102,17 +102,19 @@ type kafkaMsg struct {
 }
 
 func (kc *KafkaConsumer) Listen(inputChannel chan<- *logic.ChannelAct, inputChat chan<- *output.Message) (err error) {
-	if kc.consumerGroup, err = consumergroup.JoinConsumerGroup(kc.opt.GroupName, kc.opt.Topics, kc.opt.Zookeeper, kc.config); err != nil {
-		return err
+	for index, topic := range kc.opt.Topics {
+		if kc.consumerGroups[index], err = consumergroup.JoinConsumerGroup(kc.opt.GroupName, []string{topic}, kc.opt.Zookeeper, kc.config); err != nil {
+			return err
+		}
+
+		log.Info("kafka consumer connection established")
+
+		go kc.action(index, kc.consumerGroups[index].Messages(), inputChannel, inputChat)
 	}
-
-	log.Info("kafka consumer connection established")
-
-	go kc.action(kc.consumerGroup.Messages(), inputChannel, inputChat)
 	return nil
 }
 
-func (kc *KafkaConsumer) action(messageChannel <-chan *sarama.ConsumerMessage, inputChannel chan<- *logic.ChannelAct, inputChat chan<- *output.Message) {
+func (kc *KafkaConsumer) action(index int, messageChannel <-chan *sarama.ConsumerMessage, inputChannel chan<- *logic.ChannelAct, inputChat chan<- *output.Message) {
 	for message := range messageChannel {
 		req := &kafkaMsg{
 			Persist: true,
@@ -141,7 +143,7 @@ func (kc *KafkaConsumer) action(messageChannel <-chan *sarama.ConsumerMessage, i
 			}(*req)
 		}
 
-		kc.consumerGroup.CommitUpto(message)
+		kc.consumerGroups[index].CommitUpto(message)
 	}
 }
 
@@ -170,7 +172,9 @@ func saramMessageUnmarshal(message *sarama.ConsumerMessage, msg *kafkaMsg) (err 
 func (kc *KafkaConsumer) Close() {
 	log.Warn("kafka consumer close")
 
-	if kc.consumerGroup != nil {
-		kc.consumerGroup.Close()
+	if kc.consumerGroups != nil {
+		for _,consumer := range kc.consumerGroups {
+			consumer.Close()
+		}
 	}
 }
