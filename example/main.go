@@ -76,10 +76,12 @@ type Client struct {
 }
 
 type Component struct {
-	Name         string `toml:"name"`
-	Secret       string `toml:"secret"`
-	Domain       string `toml:"domain"`
-	PingInterval int    `toml:"ping_interval"`
+	Name                 string `toml:"name"`
+	Secret               string `toml:"secret"`
+	Domain               string `toml:"domain"`
+	PingInterval         int    `toml:"ping_interval"`
+	ConnReqCheckInterval int    `toml:"conn_req_check_interval"`
+	MaxConnCheckRetry    int    `toml:"max_conn_check_retry"`
 }
 
 type Redis struct {
@@ -163,10 +165,12 @@ func main() {
 			cnf.Ejabberd.SendRetry,
 			cnf.Ejabberd.EachNodeConnNum,
 			&output.EjabberdComponentOpt{
-				Name:         cnf.Component.Name,
-				Secret:       cnf.Component.Secret,
-				PingInterval: time.Duration(cnf.Component.PingInterval),
-				Domain:       cnf.Component.Domain,
+				Name:                 cnf.Component.Name,
+				Secret:               cnf.Component.Secret,
+				PingInterval:         time.Duration(cnf.Component.PingInterval),
+				Domain:               cnf.Component.Domain,
+				MaxConnCheckRetry:    cnf.Component.MaxConnCheckRetry,
+				ConnReqCheckInterval: time.Duration(cnf.Component.ConnReqCheckInterval),
 			})
 	} else {
 

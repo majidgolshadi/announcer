@@ -34,14 +34,8 @@ func NewClientCluster(address []string, sendRetry int, eachNodeConnNumber int, o
 
 	for _, host := range address {
 		for i := 0; i < eachNodeConnNumber; i++ {
-			client, err := NewEjabberdClient(&EjabberdClientOpt{
-				Host:           host,
-				Username:       opt.Username,
-				Password:       opt.Password,
-				PingInterval:   opt.PingInterval,
-				ResourcePrefix: opt.ResourcePrefix,
-				Domain:         opt.Domain,
-			})
+			opt.Host = host
+			client, err := NewEjabberdClient(opt)
 
 			if err != nil {
 				return nil, err
@@ -69,13 +63,8 @@ func NewComponentCluster(address []string, retry int, eachNodeConnNumber int, op
 
 	for _, host := range address {
 		for i := 0; i < eachNodeConnNumber; i++ {
-			com, err := NewEjabberdComponent(&EjabberdComponentOpt{
-				Host:         host,
-				Name:         opt.Name,
-				Secret:       opt.Secret,
-				PingInterval: opt.PingInterval,
-				Domain:       opt.Domain,
-			})
+			opt.Host = host
+			com, err := NewEjabberdComponent(opt)
 
 			if err != nil {
 				return nil, err

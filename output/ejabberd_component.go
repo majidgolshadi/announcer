@@ -6,24 +6,26 @@ import (
 	"github.com/sheenobu/go-xco"
 	log "github.com/sirupsen/logrus"
 	"math/rand"
-	"sync"
 	"time"
 )
 
 type ejabberdComponent struct {
-	opt             *EjabberdComponentOpt
-	xcoOpt          xco.Options
-	conn            *xco.Component
-	checkConnTicker *time.Ticker
-	connMutex       *sync.Mutex
+	opt                *EjabberdComponentOpt
+	xcoOpt             xco.Options
+	conn               *xco.Component
+	checkReqConnTicker *time.Ticker
+	pingConnTicker     *time.Ticker
+	connState          bool
 }
 
 type EjabberdComponentOpt struct {
-	Host         string
-	Name         string
-	Secret       string
-	PingInterval time.Duration
-	Domain       string
+	Host                 string
+	Name                 string
+	Secret               string
+	Domain               string
+	PingInterval         time.Duration
+	ConnReqCheckInterval time.Duration
+	MaxConnCheckRetry    int
 }
 
 const PingIq = "<iq to='%s' type='get' id='%s'><ping xmlns='urn:xmpp:ping'/></iq>"
@@ -49,7 +51,16 @@ func (opt *EjabberdComponentOpt) init() error {
 		opt.PingInterval = 5
 	}
 
+	if opt.MaxConnCheckRetry == 0 {
+		opt.PingInterval = 10000
+	}
+
+	if opt.ConnReqCheckInterval == 0 {
+		opt.ConnReqCheckInterval = 10
+	}
+
 	opt.PingInterval = opt.PingInterval * time.Second
+	opt.ConnReqCheckInterval = opt.ConnReqCheckInterval * time.Millisecond
 
 	return nil
 }
@@ -59,48 +70,63 @@ func NewEjabberdComponent(opt *EjabberdComponentOpt) (*ejabberdComponent, error)
 		return nil, err
 	}
 
-	return &ejabberdComponent{
-		opt:             opt,
-		connMutex:       &sync.Mutex{},
+	ec := &ejabberdComponent{
+		opt:       opt,
+		connState: false,
 		xcoOpt: xco.Options{
 			Name:         opt.Name,
 			Address:      opt.Host,
 			SharedSecret: opt.Secret,
 		},
-	}, nil
+	}
+
+	return ec, nil
 }
 
 func (ec *ejabberdComponent) Connect() (err error) {
-	ec.connMutex.Lock()
-
-	if ec.conn != nil {
-		err = errors.New("connection exists")
-		log.Error("ejabberd component connection error: ", err.Error())
-	}
-
 	if ec.conn, err = xco.NewComponent(ec.xcoOpt); err != nil {
 		return err
 	}
 
+	failedConnFlag := false
 	go func() {
 		log.Info("connect component ", ec.opt.Name, " to ", ec.opt.Host)
 		if err := ec.conn.Run(); err != nil {
+			failedConnFlag = true
 			log.Error("ejabberd component connection error: ", err.Error())
 		}
-
-		ec.connMutex.Unlock()
 	}()
 
-	go ec.keepConnectionAlive()
+	retry := 0
+	ec.checkReqConnTicker = time.NewTicker(ec.opt.ConnReqCheckInterval)
+	for range ec.checkReqConnTicker.C {
+		retry++
+		if failedConnFlag || retry > ec.opt.MaxConnCheckRetry {
+			ec.checkReqConnTicker.Stop()
+			break
+		}
+
+		if ec.ping() == nil {
+			ec.checkReqConnTicker.Stop()
+			ec.connState = true
+			go ec.keepConnectionAlive()
+			break
+		}
+	}
+
 	return nil
 }
 
 func (ec *ejabberdComponent) keepConnectionAlive() {
-	ec.checkConnTicker = time.NewTicker(ec.opt.PingInterval)
+	ec.pingConnTicker = time.NewTicker(ec.opt.PingInterval)
 
-	for range ec.checkConnTicker.C {
-		ec.conn.Send(fmt.Sprintf(PingIq, ec.opt.Domain, generateMsgID(5)))
+	for range ec.pingConnTicker.C {
+		ec.ping()
 	}
+}
+
+func (ec *ejabberdComponent) ping() error {
+	return ec.conn.Send(fmt.Sprintf(PingIq, ec.opt.Domain, generateMsgID(5)))
 }
 
 var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890")
@@ -116,14 +142,18 @@ func generateMsgID(n int) string {
 
 func (ec *ejabberdComponent) Send(msg string) error {
 	if ec.conn == nil {
-		go ec.Connect()
+		ec.Connect()
 		return errors.New("component connection does not established")
+	}
+
+	if !ec.connState {
+		return errors.New("component connecting error")
 	}
 
 	if _, err := ec.conn.Write([]byte(msg)); err != nil {
 		log.WithField("error", err.Error()).Error("component send error")
 		ec.Close()
-		go ec.Connect()
+		ec.Connect()
 
 		return err
 	}
@@ -134,9 +164,11 @@ func (ec *ejabberdComponent) Send(msg string) error {
 
 func (ec *ejabberdComponent) Close() {
 	log.Warn("close component ", ec.opt.Name, " connection from", ec.opt.Host)
-	ec.checkConnTicker.Stop()
+	ec.pingConnTicker.Stop()
 
 	if ec.conn != nil {
 		ec.conn.Close()
 	}
+
+	ec.connState = false
 }

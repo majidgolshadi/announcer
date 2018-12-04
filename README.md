@@ -79,6 +79,8 @@ name="announcer"
 secret="announcer"
 domain="soroush.ir"
 ping_interval=110
+max_conn_check_retry=10000
+conn_req_check_interval=10
 ```
 
 >To use component connection you must be define component port for ejabberd servers

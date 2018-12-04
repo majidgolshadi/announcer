@@ -18,6 +18,12 @@ topics="test-topic"
 group_name="announcer"
 buffer=1000
 
+[kafka-producer]
+brokers="127.0.0.1:9092"
+topics="test-topic"
+flush_frequency=1
+max_retry=5
+
 [mysql]
 address="127.0.0.1:3306"
 username="test"
@@ -62,3 +68,5 @@ name="announcer"
 secret="announcer"
 domain="soroush.ir"
 ping_interval=110
+max_conn_check_retry=10000
+conn_req_check_interval=10
