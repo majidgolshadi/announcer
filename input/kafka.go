@@ -103,10 +103,12 @@ type kafkaMsg struct {
 
 func (kc *KafkaConsumer) Listen(inputChannel chan<- *logic.ChannelAct, inputChat chan<- *output.Message) (err error) {
 	for index, topic := range kc.opt.Topics {
-		if kc.consumerGroups[index], err = consumergroup.JoinConsumerGroup(kc.opt.GroupName, []string{topic}, kc.opt.Zookeeper, kc.config); err != nil {
+		consumer, err := consumergroup.JoinConsumerGroup(kc.opt.GroupName, []string{topic}, kc.opt.Zookeeper, kc.config)
+		if err != nil {
 			return err
 		}
 
+		kc.consumerGroups = append(kc.consumerGroups, consumer)
 		log.Info("kafka consumer connection established")
 
 		go kc.action(index, kc.consumerGroups[index].Messages(), inputChannel, inputChat)
