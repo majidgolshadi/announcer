@@ -52,7 +52,7 @@ func (opt *EjabberdComponentOpt) init() error {
 	}
 
 	if opt.MaxConnCheckRetry == 0 {
-		opt.PingInterval = 10000
+		opt.MaxConnCheckRetry = 10000
 	}
 
 	if opt.ConnReqCheckInterval == 0 {
@@ -102,6 +102,10 @@ func (ec *ejabberdComponent) Connect() (err error) {
 	for range ec.checkReqConnTicker.C {
 		retry++
 		if failedConnFlag || retry > ec.opt.MaxConnCheckRetry {
+			log.WithFields(log.Fields{
+				"maxConnCheckRetry": ec.opt.MaxConnCheckRetry,
+				"retry": retry,
+				"failedConnFlag": failedConnFlag}).Error("can not connect to ", ec.opt.Host, " in defined range")
 			ec.checkReqConnTicker.Stop()
 			break
 		}

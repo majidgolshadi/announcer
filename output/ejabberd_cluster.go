@@ -35,7 +35,14 @@ func NewClientCluster(address []string, sendRetry int, eachNodeConnNumber int, o
 	for _, host := range address {
 		for i := 0; i < eachNodeConnNumber; i++ {
 			opt.Host = host
-			client, err := NewEjabberdClient(opt)
+			client, err := NewEjabberdClient(&EjabberdClientOpt{
+				Host:           host,
+				Username:       opt.Username,
+				Password:       opt.Password,
+				PingInterval:   opt.PingInterval,
+				ResourcePrefix: opt.ResourcePrefix,
+				Domain:         opt.Domain,
+			})
 
 			if err != nil {
 				return nil, err
@@ -63,8 +70,13 @@ func NewComponentCluster(address []string, retry int, eachNodeConnNumber int, op
 
 	for _, host := range address {
 		for i := 0; i < eachNodeConnNumber; i++ {
-			opt.Host = host
-			com, err := NewEjabberdComponent(opt)
+			com, err := NewEjabberdComponent(&EjabberdComponentOpt{
+				Host:         host,
+				Name:         opt.Name,
+				Secret:       opt.Secret,
+				PingInterval: opt.PingInterval,
+				Domain:       opt.Domain,
+			})
 
 			if err != nil {
 				return nil, err
@@ -109,13 +121,14 @@ func (c *Cluster) sendWithRetry(msg string) {
 		for range c.conn {
 			c.onConn = (c.onConn + 1) % len(c.conn)
 			if err := c.conn[c.onConn].Send(msg); err != nil {
+				log.WithField("error", err.Error()).Warn("failed to send message")
 				continue
 			}
 
 			return
 		}
 
-		log.WithField("message", msg).Warn("retry to send message after ", i, " second...")
+		log.WithField("message", msg).Error("retry to send message after ", i, " second...")
 		time.Sleep(time.Second * time.Duration(i))
 	}
 }
