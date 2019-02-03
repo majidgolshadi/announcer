@@ -4,6 +4,7 @@ import (
 	"fmt"
 	log "github.com/sirupsen/logrus"
 	"time"
+	"strings"
 )
 
 type Cluster struct {
@@ -22,7 +23,13 @@ type Message struct {
 }
 
 func (msg *Message) toString(domain string) string {
-	return fmt.Sprintf(msg.Template, fmt.Sprintf("%s@%s", msg.Username, domain))
+	endUser := msg.Username
+
+	if !strings.Contains(msg.Username, "@") {
+		endUser = fmt.Sprintf("%s@%s", msg.Username, domain)
+	}
+
+	return strings.Replace(msg.Template, "%s", endUser, 1)
 }
 
 func NewClientCluster(address []string, sendRetry int, eachNodeConnNumber int, opt *EjabberdClientOpt) (c *Cluster, err error) {
