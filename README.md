@@ -152,13 +152,21 @@ In order to send a message to **all online users** you need to set channel_id **
     "persist": true
 }
 ```
-Message will be send to specific user without any check that is he online or not
+Message will be send to specific user with no user online status check
 
 sample message before base64 encoding:
 ```xml
 <message xml:lang='en' to='%s' from="USERNAME@s/announcer" type='chat' id='ID_NUMBER' xmlns='jabber:client'><body>MESSAGE_CONTENT</body><body xml:lang='REPLY_ON_THREAD_ID'>989198872580</body><body xml:lang='MAJOR_TYPE'>SIMPLE_CHAT</body><body xml:lang='MINOR_TYPE'>TEXT</body><body xml:lang='REPLY_ON_MESSAGE_ID'>15219732781131af24fc1zwf</body><body xml:lang='SEND_TIME_IN_GMT'>1521973339583</body></message>
 ```
 if message persistable it will be store in kafka and then in DBs if not it will be not.(default value is true)
+
+
+Template keys
+-------------
+|key|description|
+|---|---|
+| `%s` | replace with announcer domain |
+| `[inc_id]` | replace with incremental number that's only for channel messages (usage: unique message id generation) |
 
 Kafka APIs
 ----------

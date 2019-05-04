@@ -9,6 +9,7 @@ import (
 	"github.com/valyala/fasthttp"
 	"net/http"
 	"time"
+	"strings"
 )
 
 const ApiNotFoundMessage = "404 api not found"
@@ -111,9 +112,16 @@ func v1PostAnnounceUsersHandler(ctx *fasthttp.RequestCtx, inputChat chan<- *outp
 		return
 	}
 
-	for _, username := range input.Usernames {
+	for index, username := range input.Usernames {
+
+		templateMsg := string(msgTmp)
+
+		if strings.Contains(string(msgTmp), "[inc_id]") {
+			templateMsg = strings.Replace(templateMsg, "[inc_id]", string(index), -1)
+		}
+
 		inputChat <- &output.Message{
-			Template: string(msgTmp),
+			Template: templateMsg,
 			Username: username,
 			Persist:  input.Persist,
 		}

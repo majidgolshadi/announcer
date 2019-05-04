@@ -12,6 +12,7 @@ import (
 	"github.com/wvanbergen/kafka/consumergroup"
 	"math/rand"
 	"time"
+	"strings"
 )
 
 type KafkaConsumer struct {
@@ -141,9 +142,16 @@ func (kc *KafkaConsumer) action(index int, messageChannel <-chan *sarama.Consume
 			}
 		} else {
 			go func(kafkaMsg) {
-				for _, username := range req.Usernames {
+				for index, username := range req.Usernames {
+
+					templateMsg := string(req.template)
+
+					if strings.Contains(string(req.template), "[inc_id]") {
+						templateMsg = strings.Replace(templateMsg, "[inc_id]", string(index), -1)
+					}
+
 					inputChat <- &output.Message{
-						Template: string(req.template),
+						Template: templateMsg,
 						Username: username,
 						Persist:  req.Persist,
 					}
