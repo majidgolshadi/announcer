@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"time"
 	"strings"
+	"strconv"
 )
 
 const ApiNotFoundMessage = "404 api not found"
@@ -117,7 +118,7 @@ func v1PostAnnounceUsersHandler(ctx *fasthttp.RequestCtx, inputChat chan<- *outp
 		templateMsg := string(msgTmp)
 
 		if strings.Contains(string(msgTmp), "[inc_id]") {
-			templateMsg = strings.Replace(templateMsg, "[inc_id]", string(index), -1)
+			templateMsg = strings.Replace(templateMsg, "[inc_id]", strconv.Itoa(index), -1)
 		}
 
 		inputChat <- &output.Message{

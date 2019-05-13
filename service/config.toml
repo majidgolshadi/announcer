@@ -14,7 +14,7 @@ format="text"
 [kafka-consumer]
 zookeeper="127.0.0.1:2181/"
 topics="test-topic"
-group_name="announcer"
+group_name="announcerz"
 buffer=1000
 
 [mysql]

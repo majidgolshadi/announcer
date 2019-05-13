@@ -13,6 +13,7 @@ import (
 	"math/rand"
 	"time"
 	"strings"
+	"strconv"
 )
 
 type KafkaConsumer struct {
@@ -147,7 +148,7 @@ func (kc *KafkaConsumer) action(index int, messageChannel <-chan *sarama.Consume
 					templateMsg := string(req.template)
 
 					if strings.Contains(string(req.template), "[inc_id]") {
-						templateMsg = strings.Replace(templateMsg, "[inc_id]", string(index), -1)
+						templateMsg = strings.Replace(templateMsg, "[inc_id]", strconv.Itoa(index), -1)
 					}
 
 					inputChat <- &output.Message{
